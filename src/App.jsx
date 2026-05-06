@@ -29,7 +29,7 @@ function App() {
   const [accounts,  setAccounts]  = useState(loadAccounts);
 
   useEffect(() => {
-    // getSession() resolve a sessão inicial (lê do localStorage + refresca token se necessário)
+    // getSession() resolve a sessão ativa em memória (sem localStorage, pois persistSession=false)
     // .catch garante que qualquer falha de rede/chave inválida mostra o Login, nunca spinner infinito
     supabase.auth.getSession()
       .then(({ data, error }) => {

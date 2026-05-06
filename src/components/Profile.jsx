@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, Trash2, Save,
-  AlertTriangle, CheckCircle,
+  AlertTriangle, CheckCircle, Info,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Card } from './Card';
@@ -11,21 +11,33 @@ import { Button } from './Button';
 export function Profile({ session, onLogout }) {
   const user = session?.user;
 
-  const [nome, setNome]                   = useState('');
+  // ── Informações Pessoais ──
+  const [nome, setNome]                     = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
-  const [whatsapp, setWhatsapp]           = useState('');
+  const [saving, setSaving]                 = useState(false);
+  const [saveStatus, setSaveStatus]         = useState(null); // null | 'success' | 'error'
+  const [saveMsg, setSaveMsg]               = useState('');
 
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState(false);
-  const [saveStatus, setSaveStatus]   = useState(null); // null | 'success' | 'error'
-  const [saveMsg, setSaveMsg]         = useState('');
+  // ── Informações de Contato ──
+  const [email, setEmail]                   = useState('');
+  const [originalEmail, setOriginalEmail]   = useState('');
+  const [whatsapp, setWhatsapp]             = useState('');
+  const [savingContact, setSavingContact]   = useState(false);
+  const [contactStatus, setContactStatus]   = useState(null); // null | 'success' | 'email_pending' | 'error'
+  const [contactMsg, setContactMsg]         = useState('');
 
+  // ── Zona de Perigo ──
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleting, setDeleting]   = useState(false);
+  const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadProfile() {
+      const authEmail = user?.email ?? '';
+      setEmail(authEmail);
+      setOriginalEmail(authEmail);
       setNome(user?.user_metadata?.full_name ?? '');
       setDataNascimento(user?.user_metadata?.birth_date ?? '');
 
@@ -47,6 +59,7 @@ export function Profile({ session, onLogout }) {
     else setLoading(false);
   }, [user]);
 
+  // Salva nome + data de nascimento
   const handleSave = async () => {
     setSaving(true);
     setSaveStatus(null);
@@ -58,7 +71,7 @@ export function Profile({ session, onLogout }) {
 
     const { error: profileErr } = await supabase
       .from('profiles')
-      .upsert({ id: user?.id, full_name: nome, birth_date: dataNascimento, whatsapp });
+      .upsert({ id: user?.id, full_name: nome, birth_date: dataNascimento });
 
     const err = authErr || profileErr;
     if (err) {
@@ -69,6 +82,43 @@ export function Profile({ session, onLogout }) {
       setTimeout(() => setSaveStatus(null), 3500);
     }
     setSaving(false);
+  };
+
+  // Salva whatsapp e, se o e-mail mudou, dispara confirmação
+  const handleSaveContact = async () => {
+    setSavingContact(true);
+    setContactStatus(null);
+    setContactMsg('');
+
+    const { error: whatsappErr } = await supabase
+      .from('profiles')
+      .upsert({ id: user?.id, whatsapp });
+
+    if (whatsappErr) {
+      setContactStatus('error');
+      setContactMsg(whatsappErr.message);
+      setSavingContact(false);
+      return;
+    }
+
+    if (email.trim() !== originalEmail) {
+      const { error: emailErr } = await supabase.auth.updateUser({ email: email.trim() });
+      if (emailErr) {
+        setContactStatus('error');
+        setContactMsg(emailErr.message);
+        setSavingContact(false);
+        return;
+      }
+      setContactStatus('email_pending');
+      setContactMsg(
+        `Um link de confirmação foi enviado para ${email.trim()}. Acesse o e-mail para concluir a alteração.`
+      );
+    } else {
+      setContactStatus('success');
+      setTimeout(() => setContactStatus(null), 3500);
+    }
+
+    setSavingContact(false);
   };
 
   const handleDeleteAccount = async () => {
@@ -136,11 +186,7 @@ export function Profile({ session, onLogout }) {
 
           <AnimatePresence>
             {saveStatus === 'success' && (
-              <motion.div
-                key="ok"
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
+              <motion.div key="ok" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="flex items-center gap-2 text-emerald-400 text-xs"
               >
                 <CheckCircle className="w-3.5 h-3.5 shrink-0" />
@@ -148,11 +194,7 @@ export function Profile({ session, onLogout }) {
               </motion.div>
             )}
             {saveStatus === 'error' && (
-              <motion.div
-                key="err"
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
+              <motion.div key="err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="text-accent text-xs p-3 bg-accent/10 rounded-lg"
               >
                 Erro ao salvar: {saveMsg}
@@ -179,17 +221,16 @@ export function Profile({ session, onLogout }) {
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               E-mail
             </label>
-            <div className="relative">
-              <input
-                type="email"
-                value={user?.email ?? ''}
-                readOnly
-                className="w-full bg-dark-bg/50 border border-dark-border rounded-lg px-4 py-2.5 text-gray-500 text-sm cursor-not-allowed"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 font-medium uppercase tracking-wider select-none">
-                somente leitura
-              </span>
-            </div>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              className="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
+            />
+            <p className="text-gray-600 text-xs mt-1.5">
+              Ao alterar, um link de confirmação será enviado para o novo endereço.
+            </p>
           </div>
 
           <div>
@@ -207,6 +248,37 @@ export function Profile({ session, onLogout }) {
               />
             </div>
           </div>
+
+          <AnimatePresence>
+            {contactStatus === 'success' && (
+              <motion.div key="c-ok" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="flex items-center gap-2 text-emerald-400 text-xs"
+              >
+                <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                Contato salvo com sucesso!
+              </motion.div>
+            )}
+            {contactStatus === 'email_pending' && (
+              <motion.div key="c-pending" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="flex items-start gap-2 text-xs p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-blue-300"
+              >
+                <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                {contactMsg}
+              </motion.div>
+            )}
+            {contactStatus === 'error' && (
+              <motion.div key="c-err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="text-accent text-xs p-3 bg-accent/10 rounded-lg"
+              >
+                Erro: {contactMsg}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <Button onClick={handleSaveContact} disabled={savingContact}>
+            <Save className="w-4 h-4" />
+            {savingContact ? 'Salvando…' : 'Salvar Contato'}
+          </Button>
         </div>
       </Card>
 

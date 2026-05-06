@@ -9,12 +9,12 @@ const TABS = [
 export function Header({ activeTab = 'dashboard', onTabChange, onLogout }) {
   return (
     <>
-      {/* ── Desktop / tablet header ── */}
+      {/* ── Top header — hidden on desktop (lg+) because Sidebar takes over ── */}
       <motion.header
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl z-50 rounded-2xl bg-black/40 backdrop-blur-md border border-white/5 shadow-[0_0_20px_rgba(239,35,60,0.1)]"
+        className="lg:hidden fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl z-50 rounded-2xl bg-black/40 backdrop-blur-md border border-white/5 shadow-[0_0_20px_rgba(239,35,60,0.1)]"
       >
         {/* Gradient border shimmer */}
         <div

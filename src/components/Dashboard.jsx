@@ -55,7 +55,7 @@ export function Dashboard({ accounts = [], onGoToAccounts }) {
   const [balInt, balDec] = brl(totalBalance).split(',');
 
   return (
-    <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+    <div className="pt-32 lg:pt-10 pb-20 lg:pb-10 px-6 max-w-7xl mx-auto">
       {/* Balance header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

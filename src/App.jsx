@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from './lib/supabaseClient';
 import { Login } from './components/Login';
 import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { ConnectedAccounts } from './components/ConnectedAccounts';
 
@@ -29,8 +30,6 @@ function App() {
   const [accounts,  setAccounts]  = useState(loadAccounts);
 
   useEffect(() => {
-    // getSession() resolve a sessão ativa em memória (sem localStorage, pois persistSession=false)
-    // .catch garante que qualquer falha de rede/chave inválida mostra o Login, nunca spinner infinito
     supabase.auth.getSession()
       .then(({ data, error }) => {
         if (error) { setSession(null); return; }
@@ -38,7 +37,6 @@ function App() {
       })
       .catch(() => setSession(null));
 
-    // onAuthStateChange escuta mudanças subsequentes (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED…)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
       setSession(currentSession ?? null);
     });
@@ -64,18 +62,14 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      // scope: 'local' limpa a sessão do localStorage mesmo se a chamada à API falhar
       await supabase.auth.signOut({ scope: 'local' });
-    } catch {
-      // garante logout local mesmo com erro de rede ou chave inválida
-    }
-    setSession(null);                     // força o estado para null como garantia
+    } catch { /* garante logout mesmo com erro de rede */ }
+    setSession(null);
     setAccounts([]);
     localStorage.removeItem(STORAGE_KEY);
     setActiveTab('dashboard');
   };
 
-  // Loading state while session resolves
   if (session === undefined) {
     return (
       <div className="min-h-screen bg-dark-bg flex items-center justify-center">
@@ -96,19 +90,29 @@ function App() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="min-h-screen bg-dark-bg selection:bg-accent/30 selection:text-white relative overflow-hidden"
+          className="min-h-screen bg-dark-bg selection:bg-accent/30 selection:text-white"
         >
-          {/* Global glow */}
+          {/* Glow de fundo — só no mobile para não conflitar com a sidebar */}
+          <div className="lg:hidden fixed top-0 left-0 right-0 h-32 progressive-blur z-40 pointer-events-none" />
           <div className="absolute top-0 left-1/4 w-[40%] h-[30%] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
-          <div className="fixed top-0 left-0 right-0 h-32 progressive-blur z-40 pointer-events-none" />
 
+          {/* Mobile: header flutuante + bottom nav */}
           <Header
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onLogout={handleLogout}
           />
 
-          <main className="relative z-10">
+          {/* Desktop: sidebar fixa à esquerda */}
+          <Sidebar
+            session={session}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onLogout={handleLogout}
+          />
+
+          {/* Conteúdo — recuado pela sidebar no desktop */}
+          <main className="relative z-10 lg:pl-64">
             <AnimatePresence mode="wait">
               {activeTab === 'dashboard' ? (
                 <motion.div key="dashboard" {...pageVariants}>

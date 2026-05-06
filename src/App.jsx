@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { ConnectedAccounts } from './components/ConnectedAccounts';
+import { Profile } from './components/Profile';
 
 const STORAGE_KEY = 'vf_accounts';
 
@@ -114,20 +115,26 @@ function App() {
           {/* Conteúdo — recuado pela sidebar no desktop */}
           <main className="relative z-10 lg:pl-64">
             <AnimatePresence mode="wait">
-              {activeTab === 'dashboard' ? (
+              {activeTab === 'dashboard' && (
                 <motion.div key="dashboard" {...pageVariants}>
                   <Dashboard
                     accounts={accounts}
                     onGoToAccounts={() => setActiveTab('accounts')}
                   />
                 </motion.div>
-              ) : (
+              )}
+              {activeTab === 'accounts' && (
                 <motion.div key="accounts" {...pageVariants}>
                   <ConnectedAccounts
                     accounts={accounts}
                     onConnect={handleConnect}
                     onDisconnect={handleDisconnect}
                   />
+                </motion.div>
+              )}
+              {activeTab === 'profile' && (
+                <motion.div key="profile" {...pageVariants}>
+                  <Profile session={session} onLogout={handleLogout} />
                 </motion.div>
               )}
             </AnimatePresence>

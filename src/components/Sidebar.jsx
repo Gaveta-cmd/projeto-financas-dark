@@ -16,10 +16,10 @@ const SETTINGS_MENU = [
   {
     section: 'Geral',
     items: [
-      { label: 'Perfil',       icon: User        },
-      { label: 'Preferências', icon: Sliders      },
-      { label: 'Assinatura',   icon: Zap          },
-      { label: 'API Keys',     icon: Key          },
+      { id: 'profile', label: 'Perfil',       icon: User    },
+      {                label: 'Preferências', icon: Sliders  },
+      {                label: 'Assinatura',   icon: Zap      },
+      {                label: 'API Keys',     icon: Key      },
     ],
   },
   {
@@ -149,15 +149,28 @@ export function Sidebar({ session, activeTab, onTabChange, onLogout }) {
                     {section}
                   </p>
                   <div className="flex flex-col gap-0.5">
-                    {items.map(({ label, icon: Icon }) => (
-                      <button
-                        key={label}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 w-full text-left transition-colors"
-                      >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        {label}
-                      </button>
-                    ))}
+                    {items.map(({ id, label, icon: Icon }) => {
+                      const isActive = id && activeTab === id;
+                      return (
+                        <button
+                          key={label}
+                          onClick={() => {
+                            if (id) { onTabChange(id); setPanel('nav'); }
+                          }}
+                          className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm w-full text-left transition-colors ${
+                            isActive
+                              ? 'text-white'
+                              : 'text-gray-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {isActive && (
+                            <div className="absolute inset-0 bg-accent/10 border border-accent/20 rounded-xl" />
+                          )}
+                          <Icon className={`w-4 h-4 shrink-0 relative z-10 ${isActive ? 'text-accent' : ''}`} />
+                          <span className="relative z-10">{label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ))}

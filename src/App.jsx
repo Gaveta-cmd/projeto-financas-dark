@@ -28,10 +28,21 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [accounts,  setAccounts]  = useState(loadAccounts);
 
-  // Resolve session on mount, then listen for changes
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s ?? null));
+    // getSession() resolve a sessão inicial (lê do localStorage + refresca token se necessário)
+    // .catch garante que qualquer falha de rede/chave inválida mostra o Login, nunca spinner infinito
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (error) { setSession(null); return; }
+        setSession(data.session ?? null);
+      })
+      .catch(() => setSession(null));
+
+    // onAuthStateChange escuta mudanças subsequentes (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED…)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession ?? null);
+    });
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -52,7 +63,13 @@ function App() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      // scope: 'local' limpa a sessão do localStorage mesmo se a chamada à API falhar
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      // garante logout local mesmo com erro de rede ou chave inválida
+    }
+    setSession(null);                     // força o estado para null como garantia
     setAccounts([]);
     localStorage.removeItem(STORAGE_KEY);
     setActiveTab('dashboard');

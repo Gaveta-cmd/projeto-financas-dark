@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-gray-200 antialiased font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer utilities {
+  .progressive-blur {
+    mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
+    backdrop-filter: blur(8px);
+  }
+
+  .border-spin-gradient {
+    position: relative;
+    background: linear-gradient(0deg, #18181b, #18181b) padding-box,
+                conic-gradient(from var(--border-angle), #ef233c 0%, transparent 50%, #ef233c 100%) border-box;
+    border: 1px solid transparent;
+    animation: border-spin 4s linear infinite;
+  }
+
+  @property --border-angle {
+    syntax: "<angle>";
+    inherits: true;
+    initial-value: 0turn;
+  }
+
+  @keyframes border-spin {
+    to {
+      --border-angle: 1turn;
+    }
+  }
+
+  /* Shimmer effect for buttons */
+  .hover-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .hover-shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,0.1) 50%,
+      rgba(255,255,255,0) 100%
+    );
+    transform: skewX(-20deg);
+    transition: none;
+  }
+
+  .hover-shimmer:hover::after {
+    animation: shimmer 1s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    100% {
+      right: -100%;
+    }
+  }
+
+  /* Card corner accent */
+  .corner-accent {
+    position: relative;
+  }
+  .corner-accent::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(225deg, #ef233c 50%, transparent 50%);
+    z-index: 10;
+  }
+
+  /* Beam effect on hover */
+  .hover-beam {
+    position: relative;
+    overflow: hidden;
+  }
+  .hover-beam::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at top, rgba(239,35,60,0.15) 0%, transparent 60%);
+    transform: translateX(-50%) translateY(-100%);
+    transition: transform 0.5s ease;
+    pointer-events: none;
+  }
+  .hover-beam:hover::before {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Secondary containers */
+  .dashed-container {
+    @apply border border-dashed border-dark-border bg-dark-surface/50 rounded-xl p-4;
+  }
+}

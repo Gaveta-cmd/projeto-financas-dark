@@ -1,0 +1,184 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../lib/supabaseClient';
+import { Mail, Lock, ArrowRight, Loader2, AlertCircle, TrendingUp, Eye, EyeOff } from 'lucide-react';
+
+export function Login({ onLogin }) {
+  const [mode, setMode] = useState('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+    try {
+      if (mode === 'signin') {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        onLogin(data.session);
+      } else {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        setSuccess('Conta criada! Verifique seu e-mail para confirmar.');
+        setMode('signin');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const switchMode = () => {
+    setMode(m => m === 'signin' ? 'signup' : 'signin');
+    setError(null);
+    setSuccess(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-dark-bg flex items-center justify-center relative overflow-hidden selection:bg-accent/30 selection:text-white">
+      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[60%] h-[50%] bg-accent/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-md mx-4"
+      >
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="flex items-center gap-3 mb-10 justify-center"
+        >
+          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shadow-[0_0_24px_#ef233c80]">
+            <TrendingUp className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-2xl font-heading font-extrabold text-white tracking-tighter">
+            Vibe<span className="text-accent">Finance</span>
+          </span>
+        </motion.div>
+
+        {/* Card */}
+        <div className="bg-dark-surface border border-dark-border rounded-2xl p-8 shadow-2xl">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="mb-8"
+            >
+              <h1 className="text-3xl font-heading font-extrabold text-white tracking-tight mb-2">
+                {mode === 'signin' ? 'Bem-vindo de volta' : 'Crie sua conta'}
+              </h1>
+              <p className="text-gray-400 text-sm">
+                {mode === 'signin'
+                  ? 'Acesse seu painel financeiro pessoal.'
+                  : 'Comece a controlar suas finanças hoje.'}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Email */}
+            <div className="relative group">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-accent transition-colors pointer-events-none" />
+              <input
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full bg-dark-bg border border-dark-border rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/30 transition-all"
+              />
+            </div>
+
+            {/* Password */}
+            <div className="relative group">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-accent transition-colors pointer-events-none" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full bg-dark-bg border border-dark-border rounded-xl pl-11 pr-12 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/30 transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                tabIndex={-1}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-200 transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {/* Feedback */}
+            <AnimatePresence mode="wait">
+              {error && (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="flex items-center gap-2.5 bg-accent/10 border border-accent/30 rounded-xl px-4 py-3"
+                >
+                  <AlertCircle className="w-4 h-4 text-accent shrink-0" />
+                  <p className="text-accent text-sm">{error}</p>
+                </motion.div>
+              )}
+              {success && (
+                <motion.div
+                  key="success"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="flex items-center gap-2.5 bg-white/5 border border-white/20 rounded-xl px-4 py-3"
+                >
+                  <p className="text-white text-sm">{success}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Submit */}
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileTap={{ scale: 0.98 }}
+              className="mt-2 w-full bg-accent hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-heading font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_#ef233c40] hover:shadow-[0_0_30px_#ef233c60]"
+            >
+              {loading
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <>{mode === 'signin' ? 'Entrar' : 'Criar conta'}<ArrowRight className="w-4 h-4" /></>
+              }
+            </motion.button>
+          </form>
+
+          {/* Toggle */}
+          <p className="mt-6 text-center text-gray-500 text-sm">
+            {mode === 'signin' ? 'Ainda não tem conta?' : 'Já tem uma conta?'}{' '}
+            <button onClick={switchMode} className="text-accent hover:text-accent/80 font-semibold transition-colors">
+              {mode === 'signin' ? 'Criar conta' : 'Fazer login'}
+            </button>
+          </p>
+        </div>
+
+        <p className="text-center text-gray-600 text-xs mt-6">
+          Seus dados são criptografados e protegidos.
+        </p>
+      </motion.div>
+    </div>
+  );
+}

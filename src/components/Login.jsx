@@ -1,31 +1,47 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
-import { Mail, Lock, ArrowRight, Loader2, AlertCircle, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import {
+  Mail, Lock, User, Calendar,
+  ArrowRight, Loader2, AlertCircle, TrendingUp, Eye, EyeOff,
+} from 'lucide-react';
+
+const today = new Date().toISOString().split('T')[0];
 
 export function Login({ onLogin }) {
-  const [mode, setMode] = useState('signin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [mode,         setMode]         = useState('signin');
+  const [email,        setEmail]        = useState('');
+  const [password,     setPassword]     = useState('');
+  const [fullName,     setFullName]     = useState('');
+  const [birthDate,    setBirthDate]    = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState(null);
+  const [success,      setSuccess]      = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
     setLoading(true);
+
     try {
       if (mode === 'signin') {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         onLogin(data.session);
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            // full_name e birth_date ficam em raw_user_meta_data
+            // e são copiados para a tabela profiles via trigger no banco
+            data: { full_name: fullName.trim(), birth_date: birthDate },
+          },
+        });
         if (error) throw error;
-        setSuccess('Conta criada! Verifique seu e-mail para confirmar.');
+        setSuccess('Conta criada! Verifique seu e-mail para confirmar o cadastro.');
         setMode('signin');
       }
     } catch (err) {
@@ -36,9 +52,11 @@ export function Login({ onLogin }) {
   };
 
   const switchMode = () => {
-    setMode(m => m === 'signin' ? 'signup' : 'signin');
+    setMode(m => (m === 'signin' ? 'signup' : 'signin'));
     setError(null);
     setSuccess(null);
+    setFullName('');
+    setBirthDate('');
   };
 
   return (
@@ -69,6 +87,8 @@ export function Login({ onLogin }) {
 
         {/* Card */}
         <div className="bg-dark-surface border border-dark-border rounded-2xl p-8 shadow-2xl">
+
+          {/* Heading */}
           <AnimatePresence mode="wait">
             <motion.div
               key={mode}
@@ -84,12 +104,54 @@ export function Login({ onLogin }) {
               <p className="text-gray-400 text-sm">
                 {mode === 'signin'
                   ? 'Acesse seu painel financeiro pessoal.'
-                  : 'Comece a controlar suas finanças hoje.'}
+                  : 'Preencha seus dados para começar.'}
               </p>
             </motion.div>
           </AnimatePresence>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+            {/* Campos exclusivos do cadastro */}
+            <AnimatePresence initial={false}>
+              {mode === 'signup' && (
+                <motion.div
+                  key="signup-fields"
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginBottom: 0 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="flex flex-col gap-4 overflow-hidden"
+                >
+                  {/* Nome Completo */}
+                  <div className="relative group">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-accent transition-colors pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Nome Completo"
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      required
+                      autoComplete="name"
+                      className="w-full bg-dark-bg border border-dark-border rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/30 transition-all"
+                    />
+                  </div>
+
+                  {/* Data de Nascimento */}
+                  <div className="relative group">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-accent transition-colors pointer-events-none" />
+                    <input
+                      type="date"
+                      value={birthDate}
+                      onChange={e => setBirthDate(e.target.value)}
+                      required
+                      max={today}
+                      className="w-full bg-dark-bg border border-dark-border rounded-xl pl-11 pr-4 py-3.5 text-white text-sm focus:outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/30 transition-all [color-scheme:dark]"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Email */}
             <div className="relative group">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-accent transition-colors pointer-events-none" />
@@ -97,22 +159,24 @@ export function Login({ onLogin }) {
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="w-full bg-dark-bg border border-dark-border rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/30 transition-all"
               />
             </div>
 
-            {/* Password */}
+            {/* Senha */}
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-accent transition-colors pointer-events-none" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Senha"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 required
                 minLength={6}
+                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                 className="w-full bg-dark-bg border border-dark-border rounded-xl pl-11 pr-12 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/30 transition-all"
               />
               <button
@@ -152,7 +216,7 @@ export function Login({ onLogin }) {
               )}
             </AnimatePresence>
 
-            {/* Submit */}
+            {/* Botão */}
             <motion.button
               type="submit"
               disabled={loading}
@@ -166,10 +230,13 @@ export function Login({ onLogin }) {
             </motion.button>
           </form>
 
-          {/* Toggle */}
+          {/* Alternar modo */}
           <p className="mt-6 text-center text-gray-500 text-sm">
             {mode === 'signin' ? 'Ainda não tem conta?' : 'Já tem uma conta?'}{' '}
-            <button onClick={switchMode} className="text-accent hover:text-accent/80 font-semibold transition-colors">
+            <button
+              onClick={switchMode}
+              className="text-accent hover:text-accent/80 font-semibold transition-colors"
+            >
               {mode === 'signin' ? 'Criar conta' : 'Fazer login'}
             </button>
           </p>

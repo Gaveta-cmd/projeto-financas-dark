@@ -9,6 +9,7 @@ import { ConnectedAccounts } from './components/ConnectedAccounts';
 import { Profile } from './components/Profile';
 import { Preferences } from './components/Preferences';
 import { Subscription } from './components/Subscription';
+import { ChangePassword } from './components/ChangePassword';
 
 const STORAGE_KEY  = 'vf_accounts';
 const THEME_KEY    = 'vf_theme';
@@ -176,6 +177,14 @@ function App() {
               {activeTab === 'subscription' && (
                 <motion.div key="subscription" {...pageVariants}>
                   <Subscription />
+                </motion.div>
+              )}
+              {activeTab === 'change-password' && (
+                <motion.div key="change-password" {...pageVariants}>
+                  <ChangePassword
+                    session={session}
+                    onCancel={() => setActiveTab('dashboard')}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>

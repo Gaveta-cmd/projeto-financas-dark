@@ -24,7 +24,7 @@ const SETTINGS_MENU = [
   {
     section: 'Segurança',
     items: [
-      { label: 'Alterar Senha',        icon: Lock         },
+      { id: 'change-password', label: 'Alterar Senha', icon: Lock },
       { label: 'Reportar um Problema', icon: AlertTriangle },
     ],
   },

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, LayoutDashboard, CreditCard,
-  Settings, User, Sliders, Zap, Key,
+  Settings, User, Sliders, Zap,
   Lock, AlertTriangle, MessageCircle,
   LogOut, ChevronLeft,
 } from 'lucide-react';
@@ -19,7 +19,6 @@ const SETTINGS_MENU = [
       { id: 'profile',      label: 'Perfil',       icon: User    },
       { id: 'preferences', label: 'Preferências', icon: Sliders  },
       { id: 'subscription', label: 'Assinatura', icon: Zap      },
-      {                label: 'API Keys',     icon: Key      },
     ],
   },
   {

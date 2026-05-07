@@ -7,6 +7,7 @@ export function ChangePassword({ session, onCancel }) {
   const [currentPassword,  setCurrentPassword]  = useState('');
   const [newPassword,      setNewPassword]      = useState('');
   const [confirmPassword,  setConfirmPassword]  = useState('');
+  const [showCurrent,      setShowCurrent]      = useState(false);
   const [showNew,          setShowNew]          = useState(false);
   const [showConfirm,      setShowConfirm]      = useState(false);
   const [loading,          setLoading]          = useState(false);
@@ -97,14 +98,23 @@ export function ChangePassword({ session, onCancel }) {
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               Senha atual
             </label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={e => setCurrentPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              className="w-full bg-slate-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg px-4 py-2.5 text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
-            />
+            <div className="relative">
+              <input
+                type={showCurrent ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                className="w-full bg-slate-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg px-4 py-2.5 pr-11 text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrent(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              >
+                {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {/* Nova senha */}

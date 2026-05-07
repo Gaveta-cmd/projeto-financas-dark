@@ -16,8 +16,8 @@ const SETTINGS_MENU = [
   {
     section: 'Geral',
     items: [
-      { id: 'profile', label: 'Perfil',       icon: User    },
-      {                label: 'Preferências', icon: Sliders  },
+      { id: 'profile',      label: 'Perfil',       icon: User    },
+      { id: 'preferences', label: 'Preferências', icon: Sliders  },
       {                label: 'Assinatura',   icon: Zap      },
       {                label: 'API Keys',     icon: Key      },
     ],
@@ -59,26 +59,26 @@ export function Sidebar({ session, activeTab, onTabChange, onLogout }) {
   const email = user?.email ?? '';
 
   return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-64 bg-dark-surface border-r border-dark-border z-50 overflow-hidden">
+    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-64 bg-white dark:bg-dark-surface border-r border-gray-200 dark:border-dark-border z-50 overflow-hidden">
 
       {/* ── Logo ── */}
       <div className="flex items-center gap-3 px-5 h-16 border-b border-dark-border shrink-0">
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-accent to-red-700 flex items-center justify-center shadow-lg shadow-accent/20">
           <TrendingUp className="w-4 h-4 text-white" />
         </div>
-        <span className="font-heading font-bold text-lg text-white tracking-tight">
+        <span className="font-heading font-bold text-lg text-gray-900 dark:text-white tracking-tight">
           Vibe<span className="text-accent">Finance</span>
         </span>
       </div>
 
       {/* ── Perfil do usuário ── */}
-      <div className="px-4 py-4 border-b border-dark-border shrink-0">
+      <div className="px-4 py-4 border-b border-gray-200 dark:border-dark-border shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0 select-none">
             <span className="text-accent font-heading font-bold text-sm">{initials}</span>
           </div>
           <div className="min-w-0">
-            <p className="text-white font-semibold text-sm leading-tight truncate">{fullName}</p>
+            <p className="text-gray-900 dark:text-white font-semibold text-sm leading-tight truncate">{fullName}</p>
             <p className="text-gray-500 text-xs truncate">{email}</p>
           </div>
         </div>
@@ -105,7 +105,9 @@ export function Sidebar({ session, activeTab, onTabChange, onLogout }) {
                     key={id}
                     onClick={() => onTabChange(id)}
                     className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left transition-colors ${
-                      isActive ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      isActive
+                        ? 'text-gray-900 dark:text-white'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
                     }`}
                   >
                     {isActive && (
@@ -136,7 +138,7 @@ export function Sidebar({ session, activeTab, onTabChange, onLogout }) {
               {/* Botão voltar */}
               <button
                 onClick={() => setPanel('nav')}
-                className="flex items-center gap-1.5 text-gray-400 hover:text-white text-xs font-medium px-2 transition-colors w-fit"
+                className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-xs font-medium px-2 transition-colors w-fit"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 Voltar
@@ -145,7 +147,7 @@ export function Sidebar({ session, activeTab, onTabChange, onLogout }) {
               {/* Seções do menu */}
               {SETTINGS_MENU.map(({ section, items }) => (
                 <div key={section}>
-                  <p className="text-gray-600 text-xs font-semibold uppercase tracking-widest px-3 mb-2">
+                  <p className="text-gray-400 dark:text-gray-600 text-xs font-semibold uppercase tracking-widest px-3 mb-2">
                     {section}
                   </p>
                   <div className="flex flex-col gap-0.5">
@@ -159,8 +161,8 @@ export function Sidebar({ session, activeTab, onTabChange, onLogout }) {
                           }}
                           className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm w-full text-left transition-colors ${
                             isActive
-                              ? 'text-white'
-                              : 'text-gray-400 hover:text-white hover:bg-white/5'
+                              ? 'text-gray-900 dark:text-white'
+                              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
                           }`}
                         >
                           {isActive && (
@@ -181,13 +183,13 @@ export function Sidebar({ session, activeTab, onTabChange, onLogout }) {
       </div>
 
       {/* ── Rodapé: Configurações + Sair ── */}
-      <div className="px-3 py-3 border-t border-dark-border shrink-0 flex flex-col gap-1">
+      <div className="px-3 py-3 border-t border-gray-200 dark:border-dark-border shrink-0 flex flex-col gap-1">
         <button
           onClick={() => setPanel(p => (p === 'settings' ? 'nav' : 'settings'))}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-colors ${
             panel === 'settings'
-              ? 'bg-white/10 text-white'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
+              ? 'bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
           }`}
         >
           <Settings className="w-4 h-4" />

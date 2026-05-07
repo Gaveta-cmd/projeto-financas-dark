@@ -7,8 +7,10 @@ import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { ConnectedAccounts } from './components/ConnectedAccounts';
 import { Profile } from './components/Profile';
+import { Preferences } from './components/Preferences';
 
-const STORAGE_KEY = 'vf_accounts';
+const STORAGE_KEY  = 'vf_accounts';
+const THEME_KEY    = 'vf_theme';
 
 function loadAccounts() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
@@ -29,6 +31,33 @@ function App() {
   const [session,   setSession]   = useState(undefined);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [accounts,  setAccounts]  = useState(loadAccounts);
+  const [theme,     setTheme]     = useState(() => localStorage.getItem(THEME_KEY) || 'dark');
+
+  // Apply / remove the 'dark' class on <html> and track system changes for 'auto'
+  useEffect(() => {
+    const root = document.documentElement;
+    const applyDark = (on) => root.classList.toggle('dark', on);
+
+    if (theme === 'dark') {
+      applyDark(true);
+      return;
+    }
+    if (theme === 'light') {
+      applyDark(false);
+      return;
+    }
+    // auto: follow OS preference
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    applyDark(mq.matches);
+    const handler = (e) => applyDark(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [theme]);
+
+  const handleThemeChange = (newTheme) => {
+    localStorage.setItem(THEME_KEY, newTheme);
+    setTheme(newTheme);
+  };
 
   useEffect(() => {
     supabase.auth.getSession()
@@ -91,7 +120,7 @@ function App() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="min-h-screen bg-dark-bg selection:bg-accent/30 selection:text-white"
+          className="min-h-screen bg-slate-50 dark:bg-dark-bg selection:bg-accent/30 selection:text-white"
         >
           {/* Glow de fundo — só no mobile para não conflitar com a sidebar */}
           <div className="lg:hidden fixed top-0 left-0 right-0 h-32 progressive-blur z-40 pointer-events-none" />
@@ -110,6 +139,7 @@ function App() {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onLogout={handleLogout}
+            theme={theme}
           />
 
           {/* Conteúdo — recuado pela sidebar no desktop */}
@@ -135,6 +165,11 @@ function App() {
               {activeTab === 'profile' && (
                 <motion.div key="profile" {...pageVariants}>
                   <Profile session={session} onLogout={handleLogout} />
+                </motion.div>
+              )}
+              {activeTab === 'preferences' && (
+                <motion.div key="preferences" {...pageVariants}>
+                  <Preferences theme={theme} onThemeChange={handleThemeChange} />
                 </motion.div>
               )}
             </AnimatePresence>

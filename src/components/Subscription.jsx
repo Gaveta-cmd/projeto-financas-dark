@@ -123,7 +123,7 @@ export function Subscription() {
                   onClick={() => setBilling(b => b === 'monthly' ? 'annual' : 'monthly')}
                   aria-label="Alternar período de cobrança"
                   className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-                    billing === 'annual' ? 'bg-lime-500' : 'bg-zinc-700'
+                    billing === 'annual' ? 'bg-accent' : 'bg-zinc-700'
                   }`}
                 >
                   <motion.span
@@ -134,7 +134,7 @@ export function Subscription() {
                 </button>
                 <span className={`text-sm font-medium transition-colors ${billing === 'annual' ? 'text-white' : 'text-gray-500'}`}>
                   Anual
-                  <span className="ml-1.5 text-xs font-bold text-lime-400">−20%</span>
+                  <span className="ml-1.5 text-xs font-bold text-accent">−20%</span>
                 </span>
               </div>
 
@@ -147,20 +147,20 @@ export function Subscription() {
                       key={id}
                       className={`relative rounded-2xl p-6 border flex flex-col ${
                         badge
-                          ? 'border-lime-500/50 bg-zinc-950'
+                          ? 'border-accent/50 bg-zinc-950'
                           : 'border-zinc-800 bg-zinc-950'
                       }`}
                     >
                       {/* Popular badge */}
                       {badge && (
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-lime-500 text-black text-xs font-bold px-3 py-0.5 rounded-full whitespace-nowrap">
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold px-3 py-0.5 rounded-full whitespace-nowrap">
                           {badge}
                         </span>
                       )}
 
                       {/* Name + icon */}
                       <div className="flex items-center gap-2 mb-3">
-                        <Icon className="w-5 h-5 text-lime-400 shrink-0" />
+                        <Icon className="w-5 h-5 text-accent shrink-0" />
                         <span className="text-white font-bold text-lg">{name}</span>
                       </div>
 
@@ -176,14 +176,14 @@ export function Subscription() {
                       <ul className="space-y-2.5 mb-6 flex-1">
                         {features.map(f => (
                           <li key={f} className="flex items-center gap-2.5 text-sm text-gray-300">
-                            <Check className="w-4 h-4 text-lime-400 shrink-0" />
+                            <Check className="w-4 h-4 text-accent shrink-0" />
                             {f}
                           </li>
                         ))}
                       </ul>
 
                       {/* Subscribe */}
-                      <button className="w-full py-2.5 rounded-xl bg-lime-500 hover:bg-lime-400 text-black text-sm font-bold transition-colors">
+                      <button className="w-full py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-white text-sm font-bold transition-colors">
                         Assinar
                       </button>
                     </div>

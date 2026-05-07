@@ -8,6 +8,7 @@ import { Dashboard } from './components/Dashboard';
 import { ConnectedAccounts } from './components/ConnectedAccounts';
 import { Profile } from './components/Profile';
 import { Preferences } from './components/Preferences';
+import { Subscription } from './components/Subscription';
 
 const STORAGE_KEY  = 'vf_accounts';
 const THEME_KEY    = 'vf_theme';
@@ -170,6 +171,11 @@ function App() {
               {activeTab === 'preferences' && (
                 <motion.div key="preferences" {...pageVariants}>
                   <Preferences theme={theme} onThemeChange={handleThemeChange} />
+                </motion.div>
+              )}
+              {activeTab === 'subscription' && (
+                <motion.div key="subscription" {...pageVariants}>
+                  <Subscription />
                 </motion.div>
               )}
             </AnimatePresence>

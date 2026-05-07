@@ -18,7 +18,7 @@ const SETTINGS_MENU = [
     items: [
       { id: 'profile',      label: 'Perfil',       icon: User    },
       { id: 'preferences', label: 'Preferências', icon: Sliders  },
-      {                label: 'Assinatura',   icon: Zap      },
+      { id: 'subscription', label: 'Assinatura', icon: Zap      },
       {                label: 'API Keys',     icon: Key      },
     ],
   },

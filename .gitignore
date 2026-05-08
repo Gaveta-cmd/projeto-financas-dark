@@ -15,6 +15,9 @@ dist-ssr
 # Claude Code internal files
 .claude/
 
+# Supabase CLI temp files
+supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

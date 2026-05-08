@@ -131,7 +131,7 @@ export function ReportProblem({ session }) {
               >
                 <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                 <p className="text-emerald-500 text-sm">
-                  Obrigado! Nossa equipe (Davi) analisará seu relato em breve.
+                  Obrigado! Nossa equipe analisará seu relato em breve.
                 </p>
               </motion.div>
             )}

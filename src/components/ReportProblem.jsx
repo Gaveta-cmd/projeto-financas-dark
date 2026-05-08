@@ -48,6 +48,12 @@ export function ReportProblem({ session }) {
       setStatus('error');
       setErrorMsg('Não foi possível enviar o relato. Tente novamente.');
     } else {
+      const userName = session.user.user_metadata?.full_name || '';
+      const userEmail = session.user.email || '';
+      await supabase.functions.invoke('notify-support', {
+        body: { subject, description: description.trim(), userEmail, userName },
+      });
+
       setStatus('success');
       setSubject('');
       setDescription('');

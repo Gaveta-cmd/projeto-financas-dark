@@ -25,12 +25,12 @@ const SETTINGS_MENU = [
     section: 'Segurança',
     items: [
       { id: 'change-password', label: 'Alterar Senha', icon: Lock },
-      { label: 'Reportar um Problema', icon: AlertTriangle },
     ],
   },
   {
     section: 'Suporte',
     items: [
+      { id: 'report-problem', label: 'Reportar um Problema', icon: AlertTriangle },
       { label: 'Falar com o Suporte', icon: MessageCircle },
     ],
   },

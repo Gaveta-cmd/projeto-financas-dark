@@ -10,6 +10,7 @@ import { Profile } from './components/Profile';
 import { Preferences } from './components/Preferences';
 import { Subscription } from './components/Subscription';
 import { ChangePassword } from './components/ChangePassword';
+import { ReportProblem } from './components/ReportProblem';
 
 const STORAGE_KEY  = 'vf_accounts';
 const THEME_KEY    = 'vf_theme';
@@ -185,6 +186,11 @@ function App() {
                     session={session}
                     onCancel={() => setActiveTab('dashboard')}
                   />
+                </motion.div>
+              )}
+              {activeTab === 'report-problem' && (
+                <motion.div key="report-problem" {...pageVariants}>
+                  <ReportProblem session={session} />
                 </motion.div>
               )}
             </AnimatePresence>

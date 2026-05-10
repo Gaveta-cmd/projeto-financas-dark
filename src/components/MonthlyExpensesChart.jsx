@@ -4,7 +4,7 @@ import {
   Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingDown, TrendingUp, Link2, BarChart2 } from 'lucide-react';
+import { TrendingDown, TrendingUp, BarChart2, Link2 } from 'lucide-react';
 import { Card } from './Card';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -179,12 +179,9 @@ function EmptyState({ onGoToAccounts }) {
         </p>
       </div>
       {onGoToAccounts && (
-        <button
-          onClick={onGoToAccounts}
-          className="flex items-center gap-2 text-sm text-accent hover:text-accent/75 font-semibold transition-colors mt-1"
-        >
+        <button onClick={onGoToAccounts} className="btn-connect mt-1">
           <Link2 className="w-4 h-4" />
-          Conectar conta agora →
+          Conectar conta
         </button>
       )}
     </motion.div>

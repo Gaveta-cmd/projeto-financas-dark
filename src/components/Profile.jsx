@@ -2,11 +2,52 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, Trash2, Save,
-  AlertTriangle, CheckCircle, Info,
+  AlertTriangle, CheckCircle, Info, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Card } from './Card';
 import { Button } from './Button';
+
+const COUNTRIES = [
+  { flag: '🇧🇷', name: 'Brasil',      code: '+55'  },
+  { flag: '🇺🇸', name: 'EUA',         code: '+1'   },
+  { flag: '🇵🇹', name: 'Portugal',    code: '+351' },
+  { flag: '🇦🇷', name: 'Argentina',   code: '+54'  },
+  { flag: '🇨🇴', name: 'Colômbia',    code: '+57'  },
+  { flag: '🇲🇽', name: 'México',      code: '+52'  },
+  { flag: '🇪🇸', name: 'Espanha',     code: '+34'  },
+  { flag: '🇬🇧', name: 'Reino Unido', code: '+44'  },
+  { flag: '🇫🇷', name: 'França',      code: '+33'  },
+  { flag: '🇩🇪', name: 'Alemanha',    code: '+49'  },
+];
+
+function formatPhoneLocal(raw, countryCode) {
+  const d = raw.replace(/\D/g, '');
+  if (countryCode === '+55') {
+    if (!d) return '';
+    if (d.length <= 2)  return `(${d}`;
+    if (d.length <= 7)  return `(${d.slice(0,2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+    return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7,11)}`;
+  }
+  if (countryCode === '+1') {
+    if (!d) return '';
+    if (d.length <= 3) return `(${d}`;
+    if (d.length <= 6) return `(${d.slice(0,3)}) ${d.slice(3)}`;
+    return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6,10)}`;
+  }
+  return d;
+}
+
+function parseStoredPhone(stored) {
+  if (!stored) return { country: COUNTRIES[0], local: '' };
+  for (const c of COUNTRIES) {
+    if (stored.startsWith(c.code)) {
+      return { country: c, local: stored.slice(c.code.length).trim() };
+    }
+  }
+  return { country: COUNTRIES[0], local: stored };
+}
 
 export function Profile({ session, onLogout }) {
   const user = session?.user;
@@ -21,7 +62,9 @@ export function Profile({ session, onLogout }) {
   // ── Informações de Contato ──
   const [email, setEmail]                   = useState('');
   const [originalEmail, setOriginalEmail]   = useState('');
-  const [whatsapp, setWhatsapp]             = useState('');
+  const [country, setCountry]               = useState(COUNTRIES[0]);
+  const [whatsappLocal, setWhatsappLocal]   = useState('');
+  const [showCountryMenu, setShowCountryMenu] = useState(false);
   const [savingContact, setSavingContact]   = useState(false);
   const [contactStatus, setContactStatus]   = useState(null); // null | 'success' | 'email_pending' | 'error'
   const [contactMsg, setContactMsg]         = useState('');
@@ -50,7 +93,9 @@ export function Profile({ session, onLogout }) {
       if (!error && data) {
         if (data.full_name)  setNome(data.full_name);
         if (data.birth_date) setDataNascimento(data.birth_date);
-        setWhatsapp(data.whatsapp ?? '');
+        const parsed = parseStoredPhone(data.whatsapp ?? '');
+        setCountry(parsed.country);
+        setWhatsappLocal(parsed.local);
       }
       setLoading(false);
     }
@@ -90,9 +135,19 @@ export function Profile({ session, onLogout }) {
     setContactStatus(null);
     setContactMsg('');
 
+    const digits = whatsappLocal.replace(/\D/g, '');
+    const fullNumber = digits ? `${country.code}${digits}` : '';
+
+    if (digits && digits.length < 8) {
+      setContactStatus('error');
+      setContactMsg('Número muito curto. Verifique o número e tente novamente.');
+      setSavingContact(false);
+      return;
+    }
+
     const { error: whatsappErr } = await supabase
       .from('profiles')
-      .upsert({ id: user?.id, whatsapp });
+      .upsert({ id: user?.id, whatsapp: fullNumber });
 
     if (whatsappErr) {
       setContactStatus('error');
@@ -130,7 +185,7 @@ export function Profile({ session, onLogout }) {
       setDeleteError(error.message);
       setDeleting(false);
     } else {
-      await supabase.auth.signOut({ scope: 'local' });
+      await supabase.auth.signOut({ scope: 'global' });
       onLogout();
     }
   };
@@ -237,15 +292,71 @@ export function Profile({ session, onLogout }) {
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               WhatsApp
             </label>
-            <div className="relative">
-              <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-              <input
-                type="tel"
-                value={whatsapp}
-                onChange={e => setWhatsapp(e.target.value)}
-                placeholder="+55 (11) 99999-9999"
-                className="w-full bg-dark-bg border border-dark-border rounded-lg pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
-              />
+            <div className="flex gap-2">
+              {/* Seletor de país */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowCountryMenu(v => !v)}
+                  className="group flex items-center gap-0 bg-dark-bg border border-dark-border rounded-lg overflow-hidden hover:border-accent/60 transition-colors h-full"
+                >
+                  {/* Bloco da bandeira */}
+                  <span className="flex items-center justify-center px-3 py-2.5 text-xl leading-none border-r border-dark-border group-hover:border-accent/30 transition-colors">
+                    {country.flag}
+                  </span>
+                  {/* Código + chevron */}
+                  <span className="flex items-center gap-1 px-2.5">
+                    <span className="text-white text-xs font-semibold tracking-wide">{country.code}</span>
+                    <ChevronDown className="w-3 h-3 text-gray-500 shrink-0" />
+                  </span>
+                </button>
+
+                <AnimatePresence>
+                  {showCountryMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowCountryMenu(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.97, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.97, y: -4 }}
+                        transition={{ duration: 0.13, ease: 'easeOut' }}
+                        className="absolute top-full left-0 mt-1.5 z-50 bg-dark-surface border border-dark-border rounded-xl shadow-2xl overflow-hidden w-56"
+                      >
+                        {COUNTRIES.map(c => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => {
+                              setCountry(c);
+                              setWhatsappLocal('');
+                              setShowCountryMenu(false);
+                            }}
+                            className={`flex items-center gap-3 w-full px-3 py-2.5 text-sm text-left hover:bg-dark-bg transition-colors ${c.code === country.code ? 'bg-accent/5' : ''}`}
+                          >
+                            <span className="text-xl leading-none shrink-0">{c.flag}</span>
+                            <span className={`flex-1 ${c.code === country.code ? 'text-accent font-medium' : 'text-white'}`}>
+                              {c.name}
+                            </span>
+                            <span className="text-gray-500 text-xs font-mono">{c.code}</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Input do número */}
+              <div className="relative flex-1">
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                <input
+                  type="tel"
+                  value={whatsappLocal}
+                  onChange={e => setWhatsappLocal(formatPhoneLocal(e.target.value, country.code))}
+                  placeholder={country.code === '+55' ? '(61) 99830-1503' : 'Número local'}
+                  className="w-full bg-dark-bg border border-dark-border rounded-lg pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
+                />
+              </div>
             </div>
           </div>
 

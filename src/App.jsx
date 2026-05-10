@@ -95,7 +95,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut({ scope: 'local' });
+      await supabase.auth.signOut({ scope: 'global' });
     } catch { /* garante logout mesmo com erro de rede */ }
     setSession(null);
     setAccounts([]);

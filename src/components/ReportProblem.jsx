@@ -112,6 +112,7 @@ export function ReportProblem({ session }) {
               onChange={e => setDescription(e.target.value)}
               placeholder="Descreva o que aconteceu, quais passos você seguiu e o que esperava que ocorresse…"
               rows={6}
+              maxLength={2000}
               className="w-full bg-slate-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg px-4 py-3 text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors resize-none"
             />
             <p className="text-xs text-gray-400 dark:text-gray-600 mt-1.5 text-right">

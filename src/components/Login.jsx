@@ -8,6 +8,16 @@ import {
 
 const today = new Date().toISOString().split('T')[0];
 
+function mapAuthError(msg = '') {
+  if (msg.includes('Invalid login credentials'))   return 'E-mail ou senha incorretos.';
+  if (msg.includes('Email not confirmed'))          return 'Confirme seu e-mail antes de fazer login.';
+  if (msg.includes('User already registered'))      return 'Este e-mail já está cadastrado.';
+  if (msg.includes('rate limit') || msg.includes('Rate limit')) return 'Muitas tentativas. Aguarde alguns minutos.';
+  if (msg.includes('Unable to validate email'))     return 'Endereço de e-mail inválido.';
+  if (msg.includes('Password should be') || msg.includes('password')) return 'A senha deve ter no mínimo 8 caracteres.';
+  return 'Ocorreu um erro. Tente novamente.';
+}
+
 export function Login({ onLogin }) {
   const [mode,         setMode]         = useState('signin');
   const [email,        setEmail]        = useState('');
@@ -23,6 +33,12 @@ export function Login({ onLogin }) {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+
+    if (mode === 'signup' && password.length < 8) {
+      setError('A senha deve ter no mínimo 8 caracteres.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -35,8 +51,6 @@ export function Login({ onLogin }) {
           email,
           password,
           options: {
-            // full_name e birth_date ficam em raw_user_meta_data
-            // e são copiados para a tabela profiles via trigger no banco
             data: { full_name: fullName.trim(), birth_date: birthDate },
           },
         });
@@ -45,7 +59,7 @@ export function Login({ onLogin }) {
         setMode('signin');
       }
     } catch (err) {
-      setError(err.message);
+      setError(mapAuthError(err.message));
     } finally {
       setLoading(false);
     }
@@ -175,7 +189,7 @@ export function Login({ onLogin }) {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={mode === 'signup' ? 8 : undefined}
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                 className="w-full bg-dark-bg border border-dark-border rounded-xl pl-11 pr-12 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/30 transition-all"
               />

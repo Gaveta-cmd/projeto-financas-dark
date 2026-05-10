@@ -5,8 +5,6 @@ import { Login } from './components/Login';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
-import { ConnectedAccounts } from './components/ConnectedAccounts';
-import { Transactions } from './components/Transactions';
 import { Profile } from './components/Profile';
 import { Preferences } from './components/Preferences';
 import { Subscription } from './components/Subscription';
@@ -154,22 +152,9 @@ function App() {
                 <motion.div key="dashboard" {...pageVariants}>
                   <Dashboard
                     accounts={accounts}
-                    onGoToAccounts={() => setActiveTab('accounts')}
-                  />
-                </motion.div>
-              )}
-              {activeTab === 'accounts' && (
-                <motion.div key="accounts" {...pageVariants}>
-                  <ConnectedAccounts
-                    accounts={accounts}
                     onConnect={handleConnect}
                     onDisconnect={handleDisconnect}
                   />
-                </motion.div>
-              )}
-              {activeTab === 'transactions' && (
-                <motion.div key="transactions" {...pageVariants}>
-                  <Transactions />
                 </motion.div>
               )}
               {activeTab === 'profile' && (

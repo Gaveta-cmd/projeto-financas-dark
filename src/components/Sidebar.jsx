@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp, LayoutDashboard, CreditCard, ArrowLeftRight,
+  TrendingUp, LayoutDashboard,
   Settings, User, Sliders, Zap,
   Lock, AlertTriangle, MessageCircle,
   LogOut, ChevronLeft,
 } from 'lucide-react';
 
 const MAIN_NAV = [
-  { id: 'dashboard',    label: 'Dashboard',         icon: LayoutDashboard  },
-  { id: 'accounts',     label: 'Contas Conectadas', icon: CreditCard       },
-  { id: 'transactions', label: 'Transações',        icon: ArrowLeftRight   },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
 
 const SETTINGS_MENU = [

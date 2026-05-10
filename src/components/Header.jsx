@@ -1,10 +1,8 @@
-import { Wallet, Bell, User, LogOut, LayoutDashboard, CreditCard, ArrowLeftRight } from 'lucide-react';
+import { Wallet, Bell, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const TABS = [
-  { id: 'dashboard',    label: 'Dashboard',          icon: LayoutDashboard },
-  { id: 'accounts',     label: 'Contas Conectadas',  icon: CreditCard       },
-  { id: 'transactions', label: 'Transações',         icon: ArrowLeftRight   },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
 
 export function Header({ activeTab = 'dashboard', onTabChange, onLogout }) {
@@ -109,7 +107,7 @@ export function Header({ activeTab = 'dashboard', onTabChange, onLogout }) {
                   />
                 )}
                 <Icon className="w-5 h-5" />
-                <span>{tab.id === 'accounts' ? 'Contas' : tab.label}</span>
+                <span>{tab.label}</span>
               </button>
             );
           })}

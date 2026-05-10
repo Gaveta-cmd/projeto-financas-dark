@@ -11,6 +11,7 @@ import { Preferences } from './components/Preferences';
 import { Subscription } from './components/Subscription';
 import { ChangePassword } from './components/ChangePassword';
 import { ReportProblem } from './components/ReportProblem';
+import { SupportChat } from './components/SupportChat';
 
 const STORAGE_KEY  = 'vf_accounts';
 const THEME_KEY    = 'vf_theme';
@@ -191,6 +192,11 @@ function App() {
               {activeTab === 'report-problem' && (
                 <motion.div key="report-problem" {...pageVariants}>
                   <ReportProblem session={session} />
+                </motion.div>
+              )}
+              {activeTab === 'support-chat' && (
+                <motion.div key="support-chat" {...pageVariants}>
+                  <SupportChat />
                 </motion.div>
               )}
             </AnimatePresence>

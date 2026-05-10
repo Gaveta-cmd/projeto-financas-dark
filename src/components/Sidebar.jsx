@@ -31,7 +31,7 @@ const SETTINGS_MENU = [
     section: 'Suporte',
     items: [
       { id: 'report-problem', label: 'Reportar um Problema', icon: AlertTriangle },
-      { label: 'Falar com o Suporte', icon: MessageCircle },
+      { id: 'support-chat',   label: 'Falar com o Suporte',   icon: MessageCircle },
     ],
   },
 ];

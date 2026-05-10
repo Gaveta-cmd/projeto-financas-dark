@@ -1,7 +1,7 @@
 import { Card } from './Card';
 import { Button } from './Button';
-import { GrowthChart } from './GrowthChart';
-import { ArrowUpRight, Coffee, ShoppingBag, Zap, Target, AlertTriangle, Link2 } from 'lucide-react';
+import { MonthlyExpensesChart } from './MonthlyExpensesChart';
+import { Coffee, ShoppingBag, Zap, Target, AlertTriangle, Link2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const transactions = [
@@ -98,16 +98,7 @@ export function Dashboard({ accounts = [], onGoToAccounts }) {
       >
         {/* Column 1: Chart + Transactions */}
         <motion.div variants={itemVariants} className="flex flex-col gap-8 lg:col-span-2">
-          <Card>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-heading font-bold text-white">Crescimento Mensal</h2>
-              <span className="flex items-center gap-1 text-accent bg-accent/10 px-3 py-1 rounded-full text-sm font-semibold">
-                <ArrowUpRight className="w-4 h-4" />
-                +12.5%
-              </span>
-            </div>
-            <GrowthChart />
-          </Card>
+          <MonthlyExpensesChart accounts={accounts} onGoToAccounts={onGoToAccounts} />
 
           <div>
             <h3 className="text-lg font-heading font-bold text-white mb-4">Últimas Transações</h3>

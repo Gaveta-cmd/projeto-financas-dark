@@ -62,7 +62,7 @@ O projeto segue uma identidade visual rigorosa inspirada no estilo "Linear/Verce
 2. Instale as dependências:
    npm install
 
-3.Configure as variáveis de ambiente — crie um arquivo .env na raiz:
+3. Configure as variáveis de ambiente — crie um arquivo .env na raiz:
    VITE_SUPABASE_URL=sua_url_do_supabase
    VITE_SUPABASE_ANON_KEY=sua_chave_anonima
 

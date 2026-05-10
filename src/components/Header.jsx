@@ -1,9 +1,10 @@
-import { Wallet, Bell, User, LogOut, LayoutDashboard, CreditCard } from 'lucide-react';
+import { Wallet, Bell, User, LogOut, LayoutDashboard, CreditCard, ArrowLeftRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const TABS = [
-  { id: 'dashboard', label: 'Dashboard',          icon: LayoutDashboard },
-  { id: 'accounts',  label: 'Contas Conectadas',  icon: CreditCard       },
+  { id: 'dashboard',    label: 'Dashboard',          icon: LayoutDashboard },
+  { id: 'accounts',     label: 'Contas Conectadas',  icon: CreditCard       },
+  { id: 'transactions', label: 'Transações',         icon: ArrowLeftRight   },
 ];
 
 export function Header({ activeTab = 'dashboard', onTabChange, onLogout }) {

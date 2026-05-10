@@ -39,7 +39,6 @@ O projeto segue uma identidade visual rigorosa inspirada no estilo "Linear/Verce
 - [x] Troca de senha com reautenticação e validação em tempo real.
 - [x] Exclusão permanente de conta com modal de confirmação.
 - [x] Preferências de tema e efeitos sonoros.
-- [x] Tela de Planos de Assinatura (Grátis, Pro, Premium) com toggle mensal/anual.
 - [x] Chat de Suporte com IA via Edge Function do Supabase.
 - [x] Formulário de reportar problemas com salvamento no banco de dados.
 - [x] Layout totalmente responsivo (Sidebar no desktop, Bottom Nav no mobile).
@@ -50,7 +49,6 @@ O projeto segue uma identidade visual rigorosa inspirada no estilo "Linear/Verce
 - [ ] Metas financeiras personalizadas.
 - [ ] Exportação de relatórios em PDF.
 - [ ] Notificações e alertas de limite de gastos.
-- [ ] Implementação dos planos pagos (Stripe ou similar).
 
 ## 💻 Como rodar o projeto localmente
 
@@ -58,7 +56,7 @@ O projeto segue uma identidade visual rigorosa inspirada no estilo "Linear/Verce
    ```bash
    git clone https://github.com/Gaveta-cmd/projeto-financas-dark.git
    cd projeto-financas-dark
-
+   
 2. Instale as dependências:
    npm install
 

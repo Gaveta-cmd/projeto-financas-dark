@@ -37,8 +37,10 @@ export function ReportProblem({ session }) {
 
     setLoading(true);
 
+    // user_id NÃO é enviado pelo client: a coluna tem DEFAULT auth.uid()
+    // no Postgres, então o servidor preenche com o usuário autenticado.
+    // Mandar do client permitiria forjar tickets de outras pessoas.
     const { error } = await supabase.from('support_tickets').insert({
-      user_id:     session.user.id,
       subject,
       description: description.trim(),
       status:      'open',

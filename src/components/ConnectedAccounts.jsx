@@ -31,7 +31,13 @@ const itemVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 120, damping: 16 } },
 };
 
-export function ConnectedAccounts({ accounts, onConnect, onDisconnect }) {
+export function ConnectedAccounts({
+  accounts,
+  onConnect,
+  onDisconnect,
+  eyebrow = 'Integração Bancária',
+  title  = (<>Contas <span className="text-accent">Conectadas</span></>),
+}) {
   const [connecting, setConnecting] = useState(null);
 
   const handleConnect = async (bank) => {
@@ -46,7 +52,7 @@ export function ConnectedAccounts({ accounts, onConnect, onDisconnect }) {
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
 
   return (
-    <div className="pt-32 lg:pt-10 pb-20 lg:pb-10 px-6 max-w-7xl mx-auto">
+    <div>
       {/* Page header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -55,9 +61,9 @@ export function ConnectedAccounts({ accounts, onConnect, onDisconnect }) {
         className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4"
       >
         <div>
-          <p className="text-gray-400 font-medium mb-2 uppercase tracking-wider text-sm">Integração Bancária</p>
+          <p className="text-gray-400 font-medium mb-2 uppercase tracking-wider text-sm">{eyebrow}</p>
           <h1 className="text-4xl md:text-5xl font-heading font-extrabold text-white tracking-tighter">
-            Contas <span className="text-accent">Conectadas</span>
+            {title}
           </h1>
         </div>
         {accounts.length > 0 && (

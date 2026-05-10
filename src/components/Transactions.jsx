@@ -466,7 +466,7 @@ export function Transactions() {
   }, [transactions]);
 
   return (
-    <div className="pt-32 lg:pt-10 pb-20 lg:pb-10 px-6 max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

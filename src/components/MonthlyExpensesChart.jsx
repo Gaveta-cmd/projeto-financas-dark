@@ -73,10 +73,15 @@ function brl(n) {
 function useCountUp(target, delayMs = 600) {
   const [value, setValue] = useState(0);
   useEffect(() => {
-    setValue(0);
-    let raf, startTs = null;
+    let raf;
+    let startTs = null;
+    let didReset = false;
     const duration = 1000;
     const step = (ts) => {
+      if (!didReset) {
+        didReset = true;
+        setValue(0);
+      }
       if (!startTs) startTs = ts + delayMs;
       const elapsed = ts - startTs;
       if (elapsed < 0) { raf = requestAnimationFrame(step); return; }
@@ -87,7 +92,7 @@ function useCountUp(target, delayMs = 600) {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [target]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [target, delayMs]);
   return value;
 }
 
@@ -191,24 +196,30 @@ function EmptyState({ onGoToAccounts }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function MonthlyExpensesChart({ accounts = [], onGoToAccounts }) {
-  const [loading, setLoading]             = useState(true);
   const [activeAccount, setActiveAccount] = useState('all');
   const [activeFilter, setActiveFilter]   = useState('all');
+  const [loading, setLoading]             = useState(accounts.length > 0);
 
-  // Reset selected account if it's disconnected
-  useEffect(() => {
+  // Detecta mudanças em accounts/activeAccount durante o render e reseta o
+  // estado relacionado (padrão "adjust state on prop change" do React 18+).
+  const accountIdsKey = accounts.map(a => a.id).join(',');
+  const selectionKey = `${activeAccount}|${accountIdsKey}`;
+  const [trackedKey, setTrackedKey] = useState(selectionKey);
+
+  if (trackedKey !== selectionKey) {
+    setTrackedKey(selectionKey);
     if (activeAccount !== 'all' && !accounts.some(a => a.id === activeAccount)) {
       setActiveAccount('all');
     }
-  }, [accounts]); // eslint-disable-line react-hooks/exhaustive-deps
+    setLoading(accounts.length > 0);
+  }
 
-  // Loading animation: fires on mount + when switching accounts
+  // Skeleton de loading: fade out depois de 1.3s sempre que `loading` vira true
   useEffect(() => {
-    if (accounts.length === 0) { setLoading(false); return; }
-    setLoading(true);
+    if (!loading) return;
     const t = setTimeout(() => setLoading(false), 1300);
     return () => clearTimeout(t);
-  }, [activeAccount, accounts.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   // Generate expense data per account (deterministic mock)
   const allAccountData = useMemo(

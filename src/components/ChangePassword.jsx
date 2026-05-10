@@ -14,8 +14,7 @@ export function ChangePassword({ session, onCancel }) {
   const [status,           setStatus]           = useState(null); // null | 'success' | 'error'
   const [errorMsg,         setErrorMsg]         = useState('');
 
-  const isLongEnough   = newPassword.length >= 8;
-  const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword;
+  const isLongEnough = newPassword.length >= 8;
 
   const handleSubmit = async () => {
     setStatus(null);

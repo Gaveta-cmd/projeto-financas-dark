@@ -74,9 +74,11 @@ export function Profile({ session, onLogout }) {
   const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!user?.id);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     async function loadProfile() {
       const authEmail = user?.email ?? '';
       setEmail(authEmail);
@@ -100,8 +102,7 @@ export function Profile({ session, onLogout }) {
       setLoading(false);
     }
 
-    if (user?.id) loadProfile();
-    else setLoading(false);
+    loadProfile();
   }, [user]);
 
   // Salva nome + data de nascimento

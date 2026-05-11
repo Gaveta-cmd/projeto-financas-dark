@@ -11,7 +11,7 @@ import { Transactions } from './Transactions';
 import { InstallmentsTab } from './dashboard/InstallmentsTab';
 import { SubscriptionsTab } from './dashboard/SubscriptionsTab';
 import { CategoriesTab } from './dashboard/CategoriesTab';
-import { Cards } from './Cards';
+import { ConnectedAccounts } from './ConnectedAccounts';
 
 const TABS = [
   { id: 'overview',      label: 'Visão Geral',    icon: LayoutGrid      },
@@ -28,7 +28,7 @@ const subTabVariants = {
   exit:    { opacity: 0, y: -8, transition: { duration: 0.18 } },
 };
 
-export function Dashboard({ accounts = [] }) {
+export function Dashboard({ accounts = [], onConnect, onDisconnect }) {
   const [subTab, setSubTab] = useState('overview');
 
   return (
@@ -53,7 +53,15 @@ export function Dashboard({ accounts = [] }) {
           {subTab === 'installments'  && <InstallmentsTab />}
           {subTab === 'subscriptions' && <SubscriptionsTab />}
           {subTab === 'categories'    && <CategoriesTab />}
-          {subTab === 'cards' && <Cards />}
+          {subTab === 'cards' && (
+            <ConnectedAccounts
+              accounts={accounts}
+              onConnect={onConnect}
+              onDisconnect={onDisconnect}
+              eyebrow="Seus bancos"
+              title={<>Cart<span className="text-accent">ões</span></>}
+            />
+          )}
         </motion.div>
       </AnimatePresence>
     </div>

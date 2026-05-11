@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   Utensils, Car, Gamepad2, Home, Heart, MoreHorizontal,
   PieChart as PieIcon, AlertCircle,
+  ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -18,14 +19,40 @@ const CATEGORIES = [
 
 const CATEGORY_BY_KEY = Object.fromEntries(CATEGORIES.map((c) => [c.key, c]));
 
-const RANGES = [
-  { id: '30d', label: 'Últimos 30 dias', days: 30  },
-  { id: '90d', label: 'Últimos 90 dias', days: 90  },
-  { id: 'all', label: 'Tudo',            days: null },
-];
-
 function brl(n) {
   return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+// Local YYYY-MM-DD (sem usar toISOString que faria UTC e poderia "voltar 1 dia").
+function isoDay(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function monthBounds(offset) {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const end   = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+  return { start, end };
+}
+
+function fmtMonth(d) {
+  const s = d.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Compara totais do mês atual vs anterior para uma categoria.
+function computeChange(curr, prev) {
+  if (curr === 0 && prev === 0) return null;
+  if (prev === 0) return { dir: 'up', label: 'novo' };
+  const pct = ((curr - prev) / prev) * 100;
+  if (Math.abs(pct) < 0.5) return { dir: 'flat', label: '0%' };
+  return {
+    dir: pct > 0 ? 'up' : 'down',
+    label: `${pct > 0 ? '+' : ''}${pct.toFixed(0)}%`,
+  };
 }
 
 function CustomTooltip({ active, payload }) {
@@ -43,11 +70,32 @@ function CustomTooltip({ active, payload }) {
   );
 }
 
+function ChangeBadge({ change }) {
+  if (!change) return null;
+  const styles = {
+    up:   'text-accent bg-accent/10 border-accent/20',
+    down: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+    flat: 'text-gray-500 bg-gray-500/10 border-gray-500/20',
+  };
+  const Icon = change.dir === 'up' ? TrendingUp : change.dir === 'down' ? TrendingDown : Minus;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-md border ${styles[change.dir]}`}>
+      <Icon className="w-3 h-3" />
+      {change.label}
+    </span>
+  );
+}
+
 export function CategoriesTab() {
-  const [rangeId, setRangeId]   = useState('30d');
+  const [monthOffset, setMonthOffset] = useState(0); // 0 = mês atual; -1 = mês passado…
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
+
+  const { current, previous } = useMemo(() => ({
+    current:  monthBounds(monthOffset),
+    previous: monthBounds(monthOffset - 1),
+  }), [monthOffset]);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,21 +103,15 @@ export function CategoriesTab() {
       setLoading(true);
       setError('');
 
-      let query = supabase
+      // Busca o mês selecionado + o anterior em uma única query, particiona no client.
+      const { data, error: err } = await supabase
         .from('transactions')
         .select('amount, category, type, date')
-        .eq('type', 'expense');
+        .eq('type', 'expense')
+        .gte('date', isoDay(previous.start))
+        .lte('date', isoDay(current.end));
 
-      const range = RANGES.find((r) => r.id === rangeId);
-      if (range?.days) {
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - range.days);
-        query = query.gte('date', cutoff.toISOString().slice(0, 10));
-      }
-
-      const { data, error: err } = await query;
       if (cancelled) return;
-
       if (err) {
         setError('Não foi possível carregar suas categorias.');
         setTransactions([]);
@@ -80,26 +122,44 @@ export function CategoriesTab() {
     }
     load();
     return () => { cancelled = true; };
-  }, [rangeId]);
+  }, [current.end, previous.start]);
 
   const breakdown = useMemo(() => {
-    const totals = Object.fromEntries(CATEGORIES.map((c) => [c.key, 0]));
+    const currStart = isoDay(current.start);
+    const currEnd   = isoDay(current.end);
+    const prevStart = isoDay(previous.start);
+    const prevEnd   = isoDay(previous.end);
+
+    const empty = () => Object.fromEntries(CATEGORIES.map((c) => [c.key, 0]));
+    const totalsCurrent  = empty();
+    const totalsPrevious = empty();
+
     for (const t of transactions) {
       const v = Number(t.amount);
-      if (Number.isFinite(v) && totals[t.category] !== undefined) {
-        totals[t.category] += v;
+      if (!Number.isFinite(v)) continue;
+      if (totalsCurrent[t.category] === undefined) continue;
+      if (t.date >= currStart && t.date <= currEnd) {
+        totalsCurrent[t.category] += v;
+      } else if (t.date >= prevStart && t.date <= prevEnd) {
+        totalsPrevious[t.category] += v;
       }
     }
-    const grand = Object.values(totals).reduce((s, n) => s + n, 0);
+
+    const grand = Object.values(totalsCurrent).reduce((s, n) => s + n, 0);
     const rows = CATEGORIES.map((c) => ({
       ...c,
-      value: totals[c.key],
-      percent: grand > 0 ? (totals[c.key] / grand) * 100 : 0,
+      value:   totalsCurrent[c.key],
+      prev:    totalsPrevious[c.key],
+      percent: grand > 0 ? (totalsCurrent[c.key] / grand) * 100 : 0,
+      change:  computeChange(totalsCurrent[c.key], totalsPrevious[c.key]),
     }))
       .filter((r) => r.value > 0)
       .sort((a, b) => b.value - a.value);
     return { rows, total: grand };
-  }, [transactions]);
+  }, [transactions, current.start, current.end, previous.start, previous.end]);
+
+  const monthLabel = fmtMonth(current.start);
+  const isCurrentMonth = monthOffset === 0;
 
   return (
     <div className="space-y-6">
@@ -110,37 +170,41 @@ export function CategoriesTab() {
             Gastos por <span className="text-accent">categoria</span>
           </h2>
           <p className="text-gray-500 text-sm mt-1">
-            Veja para onde seu dinheiro está indo.
+            Veja para onde seu dinheiro está indo, mês a mês.
           </p>
         </div>
-        <div className="flex gap-1 p-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl">
-          {RANGES.map((r) => {
-            const active = rangeId === r.id;
-            return (
-              <button
-                key={r.id}
-                onClick={() => setRangeId(r.id)}
-                className={`relative px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                  active ? 'text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
-                }`}
-              >
-                {active && (
-                  <motion.div
-                    layoutId="categoriesRangeIndicator"
-                    className="absolute inset-0 bg-accent rounded-lg"
-                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                  />
-                )}
-                <span className="relative z-10">{r.label}</span>
-              </button>
-            );
-          })}
+
+        {/* Seletor de mês */}
+        <div className="flex items-center gap-1 p-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl">
+          <button
+            onClick={() => setMonthOffset((o) => o - 1)}
+            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+            aria-label="Mês anterior"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="px-3 text-xs font-semibold text-gray-900 dark:text-white min-w-[120px] text-center">
+            {monthLabel}
+          </span>
+          <button
+            onClick={() => setMonthOffset((o) => o + 1)}
+            disabled={isCurrentMonth}
+            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Próximo mês"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-24 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl">
-          <div className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-2 h-80 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl animate-pulse" />
+          <div className="lg:col-span-3 flex flex-col gap-2.5">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-20 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl animate-pulse" />
+            ))}
+          </div>
         </div>
       ) : error ? (
         <div className="flex items-start gap-2 p-4 bg-accent/10 border border-accent/20 rounded-xl">
@@ -152,9 +216,9 @@ export function CategoriesTab() {
           <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
             <PieIcon className="w-7 h-7 text-accent" />
           </div>
-          <p className="text-gray-900 dark:text-white font-semibold mb-1">Sem despesas no período</p>
+          <p className="text-gray-900 dark:text-white font-semibold mb-1">Sem despesas em {monthLabel}</p>
           <p className="text-gray-500 text-sm max-w-xs">
-            Cadastre transações na aba <strong className="text-gray-700 dark:text-gray-300">Transações</strong> para visualizar o resumo.
+            Cadastre transações na aba <strong className="text-gray-700 dark:text-gray-300">Transações</strong> ou navegue para outro mês.
           </p>
         </div>
       ) : (
@@ -167,7 +231,7 @@ export function CategoriesTab() {
             className="lg:col-span-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 relative overflow-hidden"
           >
             <h3 className="text-sm font-heading font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-widest mb-1">
-              Total
+              Total em {monthLabel}
             </h3>
             <p className="text-3xl font-heading font-extrabold text-gray-900 dark:text-white tracking-tight mb-4">
               R$ {brl(breakdown.total)}
@@ -217,8 +281,16 @@ export function CategoriesTab() {
                         <Icon className="w-5 h-5" style={{ color: row.color }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-gray-900 dark:text-white font-semibold text-sm">{row.label}</p>
-                        <p className="text-xs text-gray-500">{row.percent.toFixed(1)}% do total</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-gray-900 dark:text-white font-semibold text-sm truncate">{row.label}</p>
+                          <ChangeBadge change={row.change} />
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {row.percent.toFixed(1)}% do total
+                          {row.prev > 0 && (
+                            <> · mês passado: R$ {brl(row.prev)}</>
+                          )}
+                        </p>
                       </div>
                       <p className="text-gray-900 dark:text-white font-heading font-bold text-base shrink-0">
                         R$ {brl(row.value)}

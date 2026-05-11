@@ -198,7 +198,7 @@ function TransactionRow({ tx }) {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────
-export function OverviewTab({ onGoToTransactions }) {
+export function OverviewTab({ accounts = [], onGoToTransactions }) {
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState('');
   const [transactions, setTransactions]   = useState([]);
@@ -251,6 +251,13 @@ export function OverviewTab({ onGoToTransactions }) {
     return () => { cancelled = true; };
   }, []);
 
+  // Saldo dos bancos conectados (mock local — entra como base do saldo total
+  // e como fallback de orçamento para a regra 50/30/20).
+  const bankBalance = useMemo(
+    () => accounts.reduce((s, a) => s + Number(a.balance ?? 0), 0),
+    [accounts],
+  );
+
   // ─── Stats derivadas das transações ────────────────────────────────────
   const stats = useMemo(() => {
     const now = new Date();
@@ -298,10 +305,25 @@ export function OverviewTab({ onGoToTransactions }) {
       }
     }
 
-    const saldo = totalIncome - totalExpense;
-    // Base do 50/30/20: receita do mês corrente; cai pra receita total se
-    // ainda não houve receita este mês.
-    const baseBudget   = currIncome > 0 ? currIncome : totalIncome;
+    // Saldo total = saldo dos bancos conectados + (receitas − despesas) das
+    // transações registradas. Permite o usuário ter saldo mesmo sem ainda
+    // ter cadastrado nenhuma transação.
+    const saldo = bankBalance + totalIncome - totalExpense;
+
+    // Base do 50/30/20: prefere receita do mês; cai para saldo dos bancos
+    // conectados; por último, para receita total acumulada.
+    let baseBudget;
+    let baseLabel;
+    if (currIncome > 0) {
+      baseBudget = currIncome;
+      baseLabel  = `Base: receita do mês (R$ ${brl(currIncome)})`;
+    } else if (bankBalance > 0) {
+      baseBudget = bankBalance;
+      baseLabel  = `Base: saldo dos bancos (R$ ${brl(bankBalance)})`;
+    } else {
+      baseBudget = totalIncome;
+      baseLabel  = `Base: receita total (R$ ${brl(totalIncome)})`;
+    }
     const needsBudget  = baseBudget * 0.50;
     const wantsBudget  = baseBudget * 0.30;
     const savingsBudget = baseBudget * 0.20;
@@ -321,11 +343,11 @@ export function OverviewTab({ onGoToTransactions }) {
       totalIncome, totalExpense, saldo,
       currIncome, currExpense,
       needsSpent, wantsSpent,
-      needsBudget, wantsBudget, savingsBudget, savingsActual,
+      needsBudget, wantsBudget, savingsBudget, savingsActual, baseLabel,
       topCategory, topCategoryAmount,
       monthlyData: Array.from(monthlyMap.values()),
     };
-  }, [transactions]);
+  }, [transactions, bankBalance]);
 
   const subscriptionsMonthly = useMemo(() => {
     return subscriptions.reduce(
@@ -360,7 +382,10 @@ export function OverviewTab({ onGoToTransactions }) {
   }
 
   const hasTransactions = transactions.length > 0;
-  if (!hasTransactions) {
+  const hasAccounts     = accounts.length > 0;
+  // Só consideramos "vazio" se o usuário não tem NEM bancos conectados NEM
+  // transações — senão dá pra mostrar saldo e KPIs com os dados disponíveis.
+  if (!hasTransactions && !hasAccounts) {
     return <EmptyOverview onGoToTransactions={onGoToTransactions} />;
   }
 
@@ -405,10 +430,18 @@ export function OverviewTab({ onGoToTransactions }) {
             {saldoNegativo && '- '}R$ {balInt}
             <span className={saldoNegativo ? 'text-accent/60' : 'text-gray-400 dark:text-gray-500'}>,{balDec}</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-2">
-            Receitas: <span className="text-emerald-500 font-semibold">R$ {brl(stats.totalIncome)}</span>
-            {' · '}
-            Despesas: <span className="text-accent font-semibold">R$ {brl(stats.totalExpense)}</span>
+          <p className="text-xs text-gray-500 mt-2 flex flex-wrap gap-x-3 gap-y-1">
+            {hasAccounts && (
+              <span>
+                Bancos: <span className="text-gray-900 dark:text-white font-semibold">R$ {brl(bankBalance)}</span>
+              </span>
+            )}
+            <span>
+              Receitas: <span className="text-emerald-500 font-semibold">R$ {brl(stats.totalIncome)}</span>
+            </span>
+            <span>
+              Despesas: <span className="text-accent font-semibold">R$ {brl(stats.totalExpense)}</span>
+            </span>
           </p>
         </div>
         <div className="flex gap-3">
@@ -509,11 +542,7 @@ export function OverviewTab({ onGoToTransactions }) {
 
           <Card withAccent={false}>
             <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white mb-1">Regra 50/30/20</h3>
-            <p className="text-xs text-gray-500 mb-4">
-              {stats.currIncome > 0
-                ? `Base: receita do mês (R$ ${brl(stats.currIncome)})`
-                : `Base: receita total (R$ ${brl(stats.totalIncome)})`}
-            </p>
+            <p className="text-xs text-gray-500 mb-4">{stats.baseLabel}</p>
             {stats.needsBudget === 0 ? (
               <div className="flex flex-col items-center gap-3 py-6 text-center">
                 <Target className="w-8 h-8 text-gray-300 dark:text-gray-700" />

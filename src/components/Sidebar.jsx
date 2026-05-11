@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp, LayoutDashboard,
+  TrendingUp, LayoutDashboard, Target,
   Settings, User, Sliders,
   Lock, AlertTriangle, MessageCircle,
   LogOut, ChevronLeft,
@@ -9,6 +9,7 @@ import {
 
 const MAIN_NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'goals',     label: 'Metas',     icon: Target          },
 ];
 
 const SETTINGS_MENU = [

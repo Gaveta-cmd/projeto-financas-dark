@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
-  Wallet, Bell, User, LogOut, LayoutDashboard,
+  Wallet, Bell, User, LogOut, LayoutDashboard, Target,
   Settings, Sliders, Lock, AlertTriangle, MessageCircle, X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'goals',     label: 'Metas',     icon: Target          },
 ];
 
 const SETTINGS_MENU = [
@@ -145,6 +146,24 @@ export function Header({ activeTab = 'dashboard', onTabChange, onLogout }) {
             )}
             <LayoutDashboard className="w-5 h-5" />
             <span>Dashboard</span>
+          </button>
+
+          {/* Metas */}
+          <button
+            onClick={() => onTabChange?.('goals')}
+            className={`relative flex-1 py-4 flex flex-col items-center gap-1.5 text-xs font-medium transition-colors ${
+              activeTab === 'goals' ? 'text-accent' : 'text-gray-500'
+            }`}
+          >
+            {activeTab === 'goals' && (
+              <motion.div
+                layoutId="mobileActiveTab"
+                className="absolute top-0 left-4 right-4 h-0.5 bg-accent rounded-full"
+                transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+              />
+            )}
+            <Target className="w-5 h-5" />
+            <span>Metas</span>
           </button>
 
           {/* Configurações */}

@@ -5,6 +5,7 @@ import { Login } from './components/Login';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
+import { Goals } from './components/Goals';
 import { Profile } from './components/Profile';
 import { Preferences } from './components/Preferences';
 import { ChangePassword } from './components/ChangePassword';
@@ -154,6 +155,11 @@ function App() {
                     onConnect={handleConnect}
                     onDisconnect={handleDisconnect}
                   />
+                </motion.div>
+              )}
+              {activeTab === 'goals' && (
+                <motion.div key="goals" {...pageVariants}>
+                  <Goals />
                 </motion.div>
               )}
               {activeTab === 'profile' && (

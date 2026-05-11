@@ -101,7 +101,7 @@ function useCountUp(target, delayMs = 600) {
 function Skeleton({ className = '', style }) {
   return (
     <motion.div
-      className={`bg-zinc-800 rounded-lg ${className}`}
+      className={`bg-gray-200 dark:bg-zinc-800 rounded-lg ${className}`}
       style={style}
       animate={{ opacity: [0.4, 0.85, 0.4] }}
       transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
@@ -113,24 +113,24 @@ function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   const total = payload.reduce((s, e) => s + (e.value ?? 0), 0);
   return (
-    <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3 shadow-2xl min-w-[168px]">
-      <p className="text-zinc-400 text-xs font-medium mb-2.5 uppercase tracking-wider">{label}</p>
+    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 shadow-2xl min-w-[168px]">
+      <p className="text-gray-500 dark:text-zinc-400 text-xs font-medium mb-2.5 uppercase tracking-wider">{label}</p>
       {payload.map((entry) => {
         const cat = CATEGORIES.find(c => c.key === entry.dataKey);
         return (
           <div key={entry.dataKey} className="flex items-center justify-between gap-4 text-sm mb-1.5">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: entry.fill }} />
-              <span className="text-zinc-300">{cat?.label ?? entry.dataKey}</span>
+              <span className="text-gray-700 dark:text-zinc-300">{cat?.label ?? entry.dataKey}</span>
             </span>
-            <span className="text-white font-semibold">R$ {brl(entry.value)}</span>
+            <span className="text-gray-900 dark:text-white font-semibold">R$ {brl(entry.value)}</span>
           </div>
         );
       })}
       {payload.length > 1 && (
-        <div className="mt-2 pt-2 border-t border-zinc-700 flex justify-between text-sm">
-          <span className="text-zinc-400">Total</span>
-          <span className="text-white font-bold">R$ {brl(total)}</span>
+        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-zinc-700 flex justify-between text-sm">
+          <span className="text-gray-500 dark:text-zinc-400">Total</span>
+          <span className="text-gray-900 dark:text-white font-bold">R$ {brl(total)}</span>
         </div>
       )}
     </div>
@@ -144,17 +144,17 @@ function KPICard({ label, value, sub, trendUp, animDelay = 0 }) {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: animDelay, ease: 'easeOut' }}
-      className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4"
+      className="bg-gray-50 dark:bg-zinc-900/60 border border-gray-200 dark:border-zinc-800 rounded-xl p-4"
     >
-      <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-white text-xl font-heading font-extrabold tracking-tight">
+      <p className="text-gray-500 dark:text-zinc-500 text-xs font-medium uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-gray-900 dark:text-white text-xl font-heading font-extrabold tracking-tight">
         R$ {brl(displayValue)}
       </p>
       {sub && (
         <div className={`flex items-center gap-1 text-xs font-semibold mt-1 ${
           trendUp === undefined
-            ? 'text-zinc-500'
-            : trendUp ? 'text-red-400' : 'text-emerald-400'
+            ? 'text-gray-500 dark:text-zinc-500'
+            : trendUp ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
         }`}>
           {trendUp !== undefined && (
             trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />
@@ -174,12 +174,12 @@ function EmptyState({ onGoToAccounts }) {
       transition={{ duration: 0.4 }}
       className="flex flex-col items-center justify-center py-14 gap-4 text-center"
     >
-      <div className="w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700 flex items-center justify-center">
-        <BarChart2 className="w-7 h-7 text-zinc-600" />
+      <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 flex items-center justify-center">
+        <BarChart2 className="w-7 h-7 text-gray-400 dark:text-zinc-600" />
       </div>
       <div>
-        <p className="text-white font-semibold text-base mb-1.5">Gráfico indisponível</p>
-        <p className="text-zinc-500 text-sm max-w-[260px] leading-relaxed">
+        <p className="text-gray-900 dark:text-white font-semibold text-base mb-1.5">Gráfico indisponível</p>
+        <p className="text-gray-500 dark:text-zinc-500 text-sm max-w-[260px] leading-relaxed">
           Conecte pelo menos uma conta bancária para visualizar seus gastos mensais por categoria.
         </p>
       </div>
@@ -273,8 +273,8 @@ export function MonthlyExpensesChart({ accounts = [], onGoToAccounts }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-heading font-bold text-white">Gastos Mensais</h2>
-          <p className="text-zinc-500 text-sm mt-0.5">{subtitle}</p>
+          <h2 className="text-xl font-heading font-bold text-gray-900 dark:text-white">Gastos Mensais</h2>
+          <p className="text-gray-500 dark:text-zinc-500 text-sm mt-0.5">{subtitle}</p>
         </div>
       </div>
 
@@ -296,7 +296,7 @@ export function MonthlyExpensesChart({ accounts = [], onGoToAccounts }) {
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border ${
                       isActive
                         ? 'text-white border-transparent'
-                        : 'text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-zinc-200'
+                        : 'text-gray-600 dark:text-zinc-400 border-gray-200 dark:border-zinc-800 hover:border-gray-400 dark:hover:border-zinc-600 hover:text-gray-900 dark:hover:text-zinc-200'
                     }`}
                     style={isActive ? { backgroundColor: acc.color, borderColor: acc.color } : {}}
                   >
@@ -341,7 +341,7 @@ export function MonthlyExpensesChart({ accounts = [], onGoToAccounts }) {
                     <Skeleton key={i} className="flex-1 rounded-t-md" style={{ height: `${h}%` }} />
                   ))}
                 </div>
-                <div className="flex gap-4 pt-1 border-t border-zinc-800">
+                <div className="flex gap-4 pt-1 border-t border-gray-200 dark:border-zinc-800">
                   {[72, 68, 48, 60, 52].map((w, i) => (
                     <Skeleton key={i} className="h-4 rounded" style={{ width: w }} />
                   ))}
@@ -390,7 +390,7 @@ export function MonthlyExpensesChart({ accounts = [], onGoToAccounts }) {
                         className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 border ${
                           isActive
                             ? 'text-white border-transparent'
-                            : 'text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-zinc-200'
+                            : 'text-gray-600 dark:text-zinc-400 border-gray-200 dark:border-zinc-800 hover:border-gray-400 dark:hover:border-zinc-600 hover:text-gray-900 dark:hover:text-zinc-200'
                         }`}
                         style={isActive ? { backgroundColor: tab.color, borderColor: tab.color } : {}}
                       >
@@ -408,17 +408,17 @@ export function MonthlyExpensesChart({ accounts = [], onGoToAccounts }) {
                       margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
                       barCategoryGap="28%"
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#a1a1aa" strokeOpacity={0.35} vertical={false} />
                       <XAxis
                         dataKey="month"
-                        stroke="#52525b"
+                        stroke="#71717a"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
                         dy={8}
                       />
                       <YAxis
-                        stroke="#52525b"
+                        stroke="#71717a"
                         fontSize={11}
                         tickLine={false}
                         axisLine={false}
@@ -426,7 +426,7 @@ export function MonthlyExpensesChart({ accounts = [], onGoToAccounts }) {
                       />
                       <Tooltip
                         content={<CustomTooltip />}
-                        cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 4 }}
+                        cursor={{ fill: 'rgba(120,120,120,0.08)', radius: 4 }}
                       />
                       {visibleBars.map((cat, idx) => (
                         <Bar
@@ -451,7 +451,7 @@ export function MonthlyExpensesChart({ accounts = [], onGoToAccounts }) {
                 </div>
 
                 {/* Legend */}
-                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1 border-t border-zinc-800">
+                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1 border-t border-gray-200 dark:border-zinc-800">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.key}
@@ -463,7 +463,7 @@ export function MonthlyExpensesChart({ accounts = [], onGoToAccounts }) {
                       }`}
                     >
                       <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: cat.color }} />
-                      <span className="text-zinc-400">{cat.label}</span>
+                      <span className="text-gray-600 dark:text-zinc-400">{cat.label}</span>
                     </button>
                   ))}
                 </div>

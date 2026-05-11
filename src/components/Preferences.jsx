@@ -24,7 +24,7 @@ export function Preferences({ theme, onThemeChange }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-dark-bg px-4 py-8 md:py-12">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-bg px-4 pt-28 lg:pt-12 pb-24 md:pb-12">
       <div className="max-w-2xl mx-auto space-y-8">
 
         {/* Header */}

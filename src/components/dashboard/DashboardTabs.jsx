@@ -19,7 +19,7 @@ export function DashboardTabs({ tabs, activeId, onChange }) {
               className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors shrink-0 ${
                 isActive
                   ? 'text-white'
-                  : 'text-gray-400 hover:text-white'
+                  : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
               }`}
             >
               {isActive && (
@@ -37,7 +37,7 @@ export function DashboardTabs({ tabs, activeId, onChange }) {
       </div>
 
       {/* Fade lateral só no mobile pra indicar scroll */}
-      <div className="lg:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-dark-bg to-transparent" />
+      <div className="lg:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-slate-50 dark:from-dark-bg to-transparent" />
     </div>
   );
 }

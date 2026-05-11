@@ -6,7 +6,7 @@ export const Card = React.forwardRef(({ className, children, withAccent = true, 
     <div
       ref={ref}
       className={cn(
-        "bg-dark-surface border border-dark-border rounded-xl p-6 transition-colors",
+        "bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl p-6 transition-colors",
         withAccent && "corner-accent",
         "hover-beam",
         className

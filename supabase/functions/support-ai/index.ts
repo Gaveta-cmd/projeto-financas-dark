@@ -8,6 +8,11 @@
 //   SUPABASE_URL      — preenchido automaticamente pela plataforma
 //   SUPABASE_ANON_KEY — preenchido automaticamente pela plataforma
 //
+// Variáveis opcionais:
+//   ALLOWED_ORIGINS — lista separada por vírgula. Se ausente, libera só os
+//                     defaults locais (vite dev). Em produção, configure com
+//                     o domínio do app: supabase secrets set ALLOWED_ORIGINS=https://seu-dominio.com
+//
 // Deploy:
 //   supabase functions deploy support-ai
 //   supabase secrets set GEMINI_API_KEY=...
@@ -20,6 +25,9 @@ const GEMINI_API =
 const MAX_TOKENS = 800;
 const MAX_USER_MESSAGE_LENGTH = 2000;
 const MAX_HISTORY_MESSAGES = 30;
+
+// Defaults: apenas vite dev. Em produção, sobrescrever via env ALLOWED_ORIGINS.
+const DEFAULT_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"];
 
 const SYSTEM_PROMPT = `Você é o assistente virtual de suporte do **VibeFinance**, um site de gestão financeira pessoal. Sua missão é ajudar usuários respondendo dúvidas sobre como usar o site, sempre em **português do Brasil**, com tom amigável, direto e objetivo.
 
@@ -83,17 +91,33 @@ Abre um painel com 3 seções:
 6. **Se a dúvida for muito específica** (problema na conta do usuário, transação errada, cobrança indevida), oriente: "Para esse caso específico, abra um chamado em **Configurações → Reportar um Problema** que nossa equipe vai analisar."
 7. **Não use emojis** nem assine as mensagens. Apenas responda.`;
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+function getAllowedOrigins(): string[] {
+  const env = Deno.env.get("ALLOWED_ORIGINS");
+  if (!env) return DEFAULT_ALLOWED_ORIGINS;
+  return env.split(",").map((s) => s.trim()).filter(Boolean);
+}
 
-function jsonResponse(body: unknown, status = 200) {
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const allowed = getAllowedOrigins();
+  const origin = req.headers.get("Origin") ?? "";
+  const allowOrigin = allowed.includes(origin) ? origin : allowed[0] ?? "";
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
+function jsonResponse(
+  body: unknown,
+  status: number,
+  cors: Record<string, string>,
+) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 }
 
@@ -124,11 +148,13 @@ function sanitizeMessages(raw: unknown): ChatMessage[] | null {
 }
 
 Deno.serve(async (req) => {
+  const cors = buildCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: cors });
   }
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return jsonResponse({ error: "Method not allowed" }, 405, cors);
   }
 
   const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -136,6 +162,7 @@ Deno.serve(async (req) => {
     return jsonResponse(
       { error: "Serviço de IA não configurado. Avise o administrador." },
       500,
+      cors,
     );
   }
 
@@ -144,14 +171,42 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY");
   if (!supabaseUrl || !supabaseAnon) {
-    return jsonResponse({ error: "Servidor mal configurado." }, 500);
+    return jsonResponse({ error: "Servidor mal configurado." }, 500, cors);
   }
   const supabase = createClient(supabaseUrl, supabaseAnon, {
     global: { headers: { Authorization: authHeader } },
   });
   const { data: userData, error: userErr } = await supabase.auth.getUser();
   if (userErr || !userData?.user) {
-    return jsonResponse({ error: "Não autorizado." }, 401);
+    return jsonResponse({ error: "Não autorizado." }, 401, cors);
+  }
+
+  // Rate limit por usuário (12/min, 200/dia) — cobra a quota ANTES de gastar
+  // tokens com o Gemini. A RPC é SECURITY DEFINER e enxerga auth.uid().
+  const { data: quota, error: quotaErr } = await supabase.rpc(
+    "consume_support_ai_quota",
+  );
+  if (quotaErr) {
+    console.error("rate limit rpc failed", quotaErr);
+    return jsonResponse(
+      { error: "Erro ao validar limite de uso. Tente novamente." },
+      500,
+      cors,
+    );
+  }
+  // RPC retorna SETOF; pega a primeira (e única) linha.
+  const row = Array.isArray(quota) ? quota[0] : quota;
+  if (!row?.allowed) {
+    return jsonResponse(
+      {
+        error:
+          "Você atingiu o limite de uso do assistente. Tente novamente em alguns minutos.",
+        remaining_min: row?.remaining_min ?? 0,
+        remaining_day: row?.remaining_day ?? 0,
+      },
+      429,
+      cors,
+    );
   }
 
   // Body
@@ -159,7 +214,7 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return jsonResponse({ error: "Corpo inválido." }, 400);
+    return jsonResponse({ error: "Corpo inválido." }, 400, cors);
   }
 
   const messages = sanitizeMessages(body.messages);
@@ -167,6 +222,7 @@ Deno.serve(async (req) => {
     return jsonResponse(
       { error: "Histórico de mensagens inválido." },
       400,
+      cors,
     );
   }
 
@@ -196,6 +252,7 @@ Deno.serve(async (req) => {
     return jsonResponse(
       { error: "Não foi possível contatar o serviço de IA. Tente novamente." },
       502,
+      cors,
     );
   }
 
@@ -205,6 +262,7 @@ Deno.serve(async (req) => {
     return jsonResponse(
       { error: "O serviço de IA retornou um erro. Tente novamente em instantes." },
       502,
+      cors,
     );
   }
 
@@ -218,8 +276,9 @@ Deno.serve(async (req) => {
     return jsonResponse(
       { error: "O agente não conseguiu gerar uma resposta. Tente reformular." },
       502,
+      cors,
     );
   }
 
-  return jsonResponse({ reply });
+  return jsonResponse({ reply }, 200, cors);
 });

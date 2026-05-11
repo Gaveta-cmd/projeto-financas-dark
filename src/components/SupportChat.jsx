@@ -141,8 +141,8 @@ export function SupportChat() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-dark-bg px-4 py-8 md:py-12">
-      <div className="max-w-2xl mx-auto h-[calc(100vh-6rem)] flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-bg px-4 pt-28 lg:pt-12 pb-24 md:pb-12">
+      <div className="max-w-2xl mx-auto h-[calc(100vh-13rem)] md:h-[calc(100vh-8rem)] lg:h-[calc(100vh-6rem)] flex flex-col">
 
         {/* Header */}
         <div className="mb-6">

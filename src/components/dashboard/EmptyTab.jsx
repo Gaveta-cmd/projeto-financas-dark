@@ -8,7 +8,7 @@ export function EmptyTab({ icon: Icon, title, description }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: 'easeOut' }}
-      className="flex flex-col items-center justify-center text-center py-20 px-6 bg-dark-surface border border-dashed border-dark-border rounded-2xl relative overflow-hidden"
+      className="flex flex-col items-center justify-center text-center py-20 px-6 bg-white dark:bg-dark-surface border border-dashed border-gray-200 dark:border-dark-border rounded-2xl relative overflow-hidden"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.03] to-transparent pointer-events-none" />
 
@@ -21,10 +21,10 @@ export function EmptyTab({ icon: Icon, title, description }) {
         <span className="text-accent text-xs font-semibold uppercase tracking-wider">Em breve</span>
       </div>
 
-      <h2 className="relative z-10 text-2xl font-heading font-bold text-white mb-2 tracking-tight">
+      <h2 className="relative z-10 text-2xl font-heading font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
         {title}
       </h2>
-      <p className="relative z-10 text-gray-500 text-sm max-w-sm leading-relaxed">
+      <p className="relative z-10 text-gray-500 dark:text-gray-500 text-sm max-w-sm leading-relaxed">
         {description}
       </p>
     </motion.div>

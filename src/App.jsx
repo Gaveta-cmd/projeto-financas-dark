@@ -7,7 +7,6 @@ import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Profile } from './components/Profile';
 import { Preferences } from './components/Preferences';
-import { Subscription } from './components/Subscription';
 import { ChangePassword } from './components/ChangePassword';
 import { ReportProblem } from './components/ReportProblem';
 import { SupportChat } from './components/SupportChat';
@@ -167,11 +166,6 @@ function App() {
                   <Preferences theme={theme} onThemeChange={handleThemeChange} />
                 </motion.div>
               )}
-              {activeTab === 'subscription' && (
-                <motion.div key="subscription" {...pageVariants}>
-                  <Subscription />
-                </motion.div>
-              )}
               {activeTab === 'change-password' && (
                 <motion.div key="change-password" {...pageVariants}>
                   <ChangePassword
@@ -182,7 +176,7 @@ function App() {
               )}
               {activeTab === 'report-problem' && (
                 <motion.div key="report-problem" {...pageVariants}>
-                  <ReportProblem session={session} />
+                  <ReportProblem />
                 </motion.div>
               )}
               {activeTab === 'support-chat' && (

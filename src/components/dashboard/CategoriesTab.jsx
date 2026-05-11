@@ -32,12 +32,12 @@ function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
   return (
-    <div className="bg-dark-bg border border-dark-border rounded-xl p-3 shadow-2xl">
+    <div className="bg-white dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-xl p-3 shadow-2xl">
       <div className="flex items-center gap-2 mb-1">
         <span className="w-2.5 h-2.5 rounded-full" style={{ background: entry.payload.color }} />
-        <span className="text-gray-300 text-xs font-medium">{entry.payload.label}</span>
+        <span className="text-gray-700 dark:text-gray-300 text-xs font-medium">{entry.payload.label}</span>
       </div>
-      <p className="text-white font-heading font-bold text-sm">R$ {brl(entry.value)}</p>
+      <p className="text-gray-900 dark:text-white font-heading font-bold text-sm">R$ {brl(entry.value)}</p>
       <p className="text-gray-500 text-[11px] mt-0.5">{entry.payload.percent.toFixed(1)}% do total</p>
     </div>
   );
@@ -106,14 +106,14 @@ export function CategoriesTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-heading font-extrabold text-white tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-heading font-extrabold text-gray-900 dark:text-white tracking-tight">
             Gastos por <span className="text-accent">categoria</span>
           </h2>
           <p className="text-gray-500 text-sm mt-1">
             Veja para onde seu dinheiro está indo.
           </p>
         </div>
-        <div className="flex gap-1 p-1 bg-dark-surface border border-dark-border rounded-xl">
+        <div className="flex gap-1 p-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl">
           {RANGES.map((r) => {
             const active = rangeId === r.id;
             return (
@@ -121,7 +121,7 @@ export function CategoriesTab() {
                 key={r.id}
                 onClick={() => setRangeId(r.id)}
                 className={`relative px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                  active ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+                  active ? 'text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
               >
                 {active && (
@@ -139,7 +139,7 @@ export function CategoriesTab() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-24 bg-dark-surface border border-dark-border rounded-2xl">
+        <div className="flex items-center justify-center py-24 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl">
           <div className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
         </div>
       ) : error ? (
@@ -148,13 +148,13 @@ export function CategoriesTab() {
           <p className="text-accent text-sm">{error}</p>
         </div>
       ) : breakdown.rows.length === 0 ? (
-        <div className="flex flex-col items-center text-center py-16 bg-dark-surface border border-dashed border-dark-border rounded-2xl">
+        <div className="flex flex-col items-center text-center py-16 bg-white dark:bg-dark-surface border border-dashed border-gray-200 dark:border-dark-border rounded-2xl">
           <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
             <PieIcon className="w-7 h-7 text-accent" />
           </div>
-          <p className="text-white font-semibold mb-1">Sem despesas no período</p>
+          <p className="text-gray-900 dark:text-white font-semibold mb-1">Sem despesas no período</p>
           <p className="text-gray-500 text-sm max-w-xs">
-            Cadastre transações na aba <strong className="text-gray-300">Transações</strong> para visualizar o resumo.
+            Cadastre transações na aba <strong className="text-gray-700 dark:text-gray-300">Transações</strong> para visualizar o resumo.
           </p>
         </div>
       ) : (
@@ -164,12 +164,12 @@ export function CategoriesTab() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="lg:col-span-2 bg-dark-surface border border-dark-border rounded-2xl p-6 relative overflow-hidden"
+            className="lg:col-span-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 relative overflow-hidden"
           >
-            <h3 className="text-sm font-heading font-semibold text-gray-400 uppercase tracking-widest mb-1">
+            <h3 className="text-sm font-heading font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-widest mb-1">
               Total
             </h3>
-            <p className="text-3xl font-heading font-extrabold text-white tracking-tight mb-4">
+            <p className="text-3xl font-heading font-extrabold text-gray-900 dark:text-white tracking-tight mb-4">
               R$ {brl(breakdown.total)}
             </p>
             <div className="h-64">
@@ -207,7 +207,7 @@ export function CategoriesTab() {
                     initial={{ opacity: 0, x: 12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: idx * 0.04 }}
-                    className="relative bg-dark-surface border border-dark-border rounded-xl p-4 overflow-hidden"
+                    className="relative bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl p-4 overflow-hidden"
                   >
                     <div className="flex items-center gap-4 mb-3">
                       <div
@@ -217,14 +217,14 @@ export function CategoriesTab() {
                         <Icon className="w-5 h-5" style={{ color: row.color }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-semibold text-sm">{row.label}</p>
+                        <p className="text-gray-900 dark:text-white font-semibold text-sm">{row.label}</p>
                         <p className="text-xs text-gray-500">{row.percent.toFixed(1)}% do total</p>
                       </div>
-                      <p className="text-white font-heading font-bold text-base shrink-0">
+                      <p className="text-gray-900 dark:text-white font-heading font-bold text-base shrink-0">
                         R$ {brl(row.value)}
                       </p>
                     </div>
-                    <div className="h-1.5 w-full bg-dark-bg rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
                       <motion.div
                         className="h-full rounded-full"
                         style={{ background: row.color }}

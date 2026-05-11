@@ -113,14 +113,14 @@ function AddTransactionForm({ onClose, onCreated }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 12 }}
         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-        className="bg-dark-surface border border-dark-border rounded-2xl w-full max-w-md shadow-2xl shadow-accent/5 overflow-hidden"
+        className="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl w-full max-w-md shadow-2xl shadow-accent/5 overflow-hidden"
       >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-dark-border">
-              <h3 className="font-heading font-bold text-white text-lg">Nova transação</h3>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-dark-border">
+              <h3 className="font-heading font-bold text-gray-900 dark:text-white text-lg">Nova transação</h3>
               <button
                 onClick={onClose}
-                className="text-gray-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5"
+                className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -128,7 +128,7 @@ function AddTransactionForm({ onClose, onCreated }) {
 
             <div className="p-6 space-y-5">
               {/* Tipo */}
-              <div className="grid grid-cols-2 gap-2 p-1 bg-dark-bg border border-dark-border rounded-xl">
+              <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-xl">
                 {[
                   { id: 'expense', label: 'Despesa', icon: ArrowDownLeft },
                   { id: 'income',  label: 'Receita', icon: ArrowUpRight  },
@@ -144,7 +144,7 @@ function AddTransactionForm({ onClose, onCreated }) {
                           ? opt.id === 'expense'
                             ? 'bg-accent text-white'
                             : 'bg-emerald-500 text-white'
-                          : 'text-gray-400 hover:text-white'
+                          : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
@@ -156,7 +156,7 @@ function AddTransactionForm({ onClose, onCreated }) {
 
               {/* Título */}
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
                   Título
                 </label>
                 <input
@@ -165,13 +165,13 @@ function AddTransactionForm({ onClose, onCreated }) {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ex.: Almoço no restaurante"
                   maxLength={120}
-                  className="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
+                  className="w-full bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg px-4 py-2.5 text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
                 />
               </div>
 
               {/* Valor */}
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
                   Valor
                 </label>
                 <div className="relative">
@@ -182,14 +182,14 @@ function AddTransactionForm({ onClose, onCreated }) {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ''))}
                     placeholder="0,00"
-                    className="w-full bg-dark-bg border border-dark-border rounded-lg pl-11 pr-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors font-heading font-semibold"
+                    className="w-full bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg pl-11 pr-4 py-2.5 text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors font-heading font-semibold"
                   />
                 </div>
               </div>
 
               {/* Categoria */}
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
                   Categoria
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -202,8 +202,8 @@ function AddTransactionForm({ onClose, onCreated }) {
                         onClick={() => setCategory(cat.key)}
                         className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-xs font-medium transition-all ${
                           active
-                            ? 'border-transparent text-white'
-                            : 'border-dark-border text-gray-400 hover:text-white hover:border-white/15'
+                            ? 'border-transparent text-gray-900 dark:text-white'
+                            : 'border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-white/15'
                         }`}
                         style={active ? { backgroundColor: `${cat.color}22`, borderColor: `${cat.color}66` } : {}}
                       >
@@ -217,14 +217,14 @@ function AddTransactionForm({ onClose, onCreated }) {
 
               {/* Data */}
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
                   Data
                 </label>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors [color-scheme:dark]"
+                  className="w-full bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
 
@@ -245,11 +245,11 @@ function AddTransactionForm({ onClose, onCreated }) {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-dark-border bg-dark-bg/40">
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg/40">
               <button
                 onClick={onClose}
                 disabled={saving}
-                className="px-4 py-2 text-sm font-semibold text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -305,21 +305,21 @@ function DeleteConfirmModal({ transaction, onConfirm, onCancel, deleting }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-            className="bg-dark-surface border border-accent/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl shadow-accent/10"
+            className="bg-white dark:bg-dark-surface border border-accent/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl shadow-accent/10"
           >
             <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
               <Trash2 className="w-6 h-6 text-accent" />
             </div>
-            <h3 className="font-heading font-bold text-white text-lg mb-2">Excluir transação?</h3>
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-              <span className="text-white font-semibold">{transaction.title}</span> será removida
+            <h3 className="font-heading font-bold text-gray-900 dark:text-white text-lg mb-2">Excluir transação?</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed">
+              <span className="text-gray-900 dark:text-white font-semibold">{transaction.title}</span> será removida
               permanentemente. Esta ação não pode ser desfeita.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={onCancel}
                 disabled={deleting}
-                className="flex-1 py-2.5 text-sm font-semibold text-gray-400 border border-dark-border rounded-lg hover:text-white hover:border-gray-600 transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-dark-border rounded-lg hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-600 transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -349,7 +349,7 @@ function TransactionRow({ tx, onDelete }) {
       variants={itemVariants}
       layout
       exit={{ opacity: 0, x: 30, transition: { duration: 0.18 } }}
-      className="group relative flex items-center justify-between gap-4 p-4 bg-dark-surface border border-dark-border rounded-xl hover:border-white/15 transition-colors overflow-hidden"
+      className="group relative flex items-center justify-between gap-4 p-4 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl hover:border-gray-300 dark:hover:border-white/15 transition-colors overflow-hidden"
     >
       {/* Accent line on hover */}
       <div
@@ -365,7 +365,7 @@ function TransactionRow({ tx, onDelete }) {
           <Icon className="w-5 h-5" style={{ color: cat.color }} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-white text-sm truncate">{tx.title}</p>
+          <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{tx.title}</p>
           <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
             <span className="flex items-center gap-1">
               <Tag className="w-3 h-3" />
@@ -381,13 +381,13 @@ function TransactionRow({ tx, onDelete }) {
 
       <div className="flex items-center gap-3 shrink-0">
         <div className="text-right">
-          <p className={`font-heading font-bold text-base ${isIncome ? 'text-emerald-400' : 'text-white'}`}>
+          <p className={`font-heading font-bold text-base ${isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>
             {isIncome ? '+' : '-'} R$ {brl(tx.amount)}
           </p>
         </div>
         <button
           onClick={() => onDelete(tx)}
-          className="text-gray-600 hover:text-accent transition-colors p-2 rounded-lg hover:bg-accent/10 opacity-0 group-hover:opacity-100 focus:opacity-100"
+          className="text-gray-400 dark:text-gray-600 hover:text-accent transition-colors p-2 rounded-lg hover:bg-accent/10 opacity-0 group-hover:opacity-100 focus:opacity-100"
           title="Excluir"
         >
           <Trash2 className="w-4 h-4" />
@@ -475,8 +475,8 @@ export function Transactions() {
         className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4"
       >
         <div>
-          <p className="text-gray-400 font-medium mb-2 uppercase tracking-wider text-sm">Histórico</p>
-          <h1 className="text-4xl md:text-5xl font-heading font-extrabold text-white tracking-tighter">
+          <p className="text-gray-500 dark:text-gray-400 font-medium mb-2 uppercase tracking-wider text-sm">Histórico</p>
+          <h1 className="text-4xl md:text-5xl font-heading font-extrabold text-gray-900 dark:text-white tracking-tighter">
             Suas <span className="text-accent">Transações</span>
           </h1>
         </div>
@@ -498,22 +498,22 @@ export function Transactions() {
           transition={{ duration: 0.4, delay: 0.05 }}
           className="grid grid-cols-3 gap-3 mb-8"
         >
-          <div className="bg-dark-surface border border-dark-border rounded-xl p-4">
+          <div className="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl p-4">
             <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Receitas</p>
-            <p className="text-emerald-400 text-xl font-heading font-extrabold tracking-tight">
+            <p className="text-emerald-600 dark:text-emerald-400 text-xl font-heading font-extrabold tracking-tight">
               R$ {brl(totals.income)}
             </p>
           </div>
-          <div className="bg-dark-surface border border-dark-border rounded-xl p-4">
+          <div className="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl p-4">
             <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Despesas</p>
             <p className="text-accent text-xl font-heading font-extrabold tracking-tight">
               R$ {brl(totals.expense)}
             </p>
           </div>
-          <div className="bg-dark-surface border border-dark-border rounded-xl p-4">
+          <div className="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl p-4">
             <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Saldo</p>
             <p className={`text-xl font-heading font-extrabold tracking-tight ${
-              totals.balance >= 0 ? 'text-white' : 'text-accent'
+              totals.balance >= 0 ? 'text-gray-900 dark:text-white' : 'text-accent'
             }`}>
               R$ {brl(totals.balance)}
             </p>
@@ -535,12 +535,12 @@ export function Transactions() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex flex-col items-center text-center py-16 bg-dark-surface border border-dashed border-dark-border rounded-2xl"
+          className="flex flex-col items-center text-center py-16 bg-white dark:bg-dark-surface border border-dashed border-gray-200 dark:border-dark-border rounded-2xl"
         >
           <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
             <Plus className="w-7 h-7 text-accent" />
           </div>
-          <p className="text-white font-semibold mb-1">Nenhuma transação cadastrada</p>
+          <p className="text-gray-900 dark:text-white font-semibold mb-1">Nenhuma transação cadastrada</p>
           <p className="text-gray-500 text-sm max-w-xs">
             Comece adicionando sua primeira receita ou despesa para acompanhar suas finanças.
           </p>

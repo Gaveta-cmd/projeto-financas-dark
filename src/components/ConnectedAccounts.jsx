@@ -61,15 +61,15 @@ export function ConnectedAccounts({
         className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4"
       >
         <div>
-          <p className="text-gray-400 font-medium mb-2 uppercase tracking-wider text-sm">{eyebrow}</p>
-          <h1 className="text-4xl md:text-5xl font-heading font-extrabold text-white tracking-tighter">
+          <p className="text-gray-500 dark:text-gray-400 font-medium mb-2 uppercase tracking-wider text-sm">{eyebrow}</p>
+          <h1 className="text-4xl md:text-5xl font-heading font-extrabold text-gray-900 dark:text-white tracking-tighter">
             {title}
           </h1>
         </div>
         {accounts.length > 0 && (
           <div className="text-right">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Saldo Total</p>
-            <p className="text-3xl font-heading font-bold text-white">
+            <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">
               R$ {brl(totalBalance)}
             </p>
           </div>
@@ -85,7 +85,7 @@ export function ConnectedAccounts({
             exit={{ opacity: 0, height: 0 }}
             className="mb-10 overflow-hidden"
           >
-            <h2 className="text-base font-heading font-semibold text-gray-300 mb-4 flex items-center gap-2">
+            <h2 className="text-base font-heading font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
               <Link2 className="w-4 h-4 text-accent" />
               Suas contas ({accounts.length})
             </h2>
@@ -100,7 +100,7 @@ export function ConnectedAccounts({
                   key={acc.id}
                   variants={itemVariants}
                   layout
-                  className="relative bg-dark-surface border border-dark-border rounded-xl p-5 overflow-hidden group"
+                  className="relative bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl p-5 overflow-hidden group"
                 >
                   {/* Subtle brand glow */}
                   <div
@@ -116,7 +116,7 @@ export function ConnectedAccounts({
                         <span style={{ color: acc.color }}>{acc.abbr}</span>
                       </div>
                       <div>
-                        <p className="font-semibold text-white text-sm leading-tight">{acc.name}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white text-sm leading-tight">{acc.name}</p>
                         <span className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                           <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                           Conectado · {acc.type}
@@ -125,14 +125,14 @@ export function ConnectedAccounts({
                     </div>
                     <button
                       onClick={() => onDisconnect(acc.id)}
-                      className="text-gray-600 hover:text-accent transition-colors p-1 rounded-lg hover:bg-accent/10"
+                      className="text-gray-400 dark:text-gray-600 hover:text-accent transition-colors p-1 rounded-lg hover:bg-accent/10"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                   <div className="relative z-10">
                     <p className="text-xs text-gray-500 mb-1">Saldo disponível</p>
-                    <p className="text-2xl font-heading font-bold text-white">
+                    <p className="text-2xl font-heading font-bold text-gray-900 dark:text-white">
                       R$ {brl(acc.balance)}
                     </p>
                   </div>
@@ -171,7 +171,7 @@ export function ConnectedAccounts({
                   disabled={!!connecting}
                   whileHover={!connecting ? { y: -2 } : {}}
                   whileTap={!connecting ? { scale: 0.97 } : {}}
-                  className="group relative bg-dark-surface border border-dark-border rounded-xl p-5 text-left hover:border-white/15 transition-all disabled:cursor-wait overflow-hidden"
+                  className="group relative bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl p-5 text-left hover:border-gray-300 dark:hover:border-white/15 transition-all disabled:cursor-wait overflow-hidden"
                 >
                   <div
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -185,7 +185,7 @@ export function ConnectedAccounts({
                       <span style={{ color: bank.color }}>{bank.abbr}</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-white text-sm leading-tight">{bank.name}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm leading-tight">{bank.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{bank.type}</p>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs font-medium">
@@ -195,7 +195,7 @@ export function ConnectedAccounts({
                           <span className="text-accent">Conectando...</span>
                         </>
                       ) : (
-                        <span className="text-gray-500 group-hover:text-gray-200 transition-colors flex items-center gap-1">
+                        <span className="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors flex items-center gap-1">
                           <Plus className="w-3 h-3" /> Conectar
                         </span>
                       )}
@@ -213,10 +213,10 @@ export function ConnectedAccounts({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-12 text-gray-600"
+          className="text-center py-12 text-gray-500 dark:text-gray-600"
         >
           <CheckCircle2 className="w-10 h-10 text-accent mx-auto mb-3" />
-          <p className="font-medium text-gray-400">Todas as contas estão conectadas!</p>
+          <p className="font-medium text-gray-700 dark:text-gray-400">Todas as contas estão conectadas!</p>
           <p className="text-sm mt-1">Desconecte alguma para ver outras opções.</p>
         </motion.div>
       )}

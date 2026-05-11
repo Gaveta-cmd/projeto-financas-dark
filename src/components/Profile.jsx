@@ -200,7 +200,7 @@ export function Profile({ session, onLogout }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10 space-y-8">
+    <div className="max-w-2xl mx-auto px-6 pt-28 lg:pt-10 pb-24 md:pb-10 space-y-8">
 
       <div>
         <h1 className="font-heading font-bold text-2xl text-white">Perfil</h1>

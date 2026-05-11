@@ -24,9 +24,9 @@ function brl(n) {
   return n.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 }
 
-function ProgressBar({ value, color = 'bg-white' }) {
+function ProgressBar({ value, color = 'bg-gray-900 dark:bg-white' }) {
   return (
-    <div className="h-2 w-full bg-dark-bg rounded-full overflow-hidden">
+    <div className="h-2 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
       <motion.div
         className={`h-full rounded-full ${color}`}
         initial={{ width: 0 }}
@@ -63,15 +63,15 @@ export function OverviewTab({ accounts = [], onGoToCards }) {
         className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6"
       >
         <div>
-          <p className="text-gray-400 font-medium mb-2 uppercase tracking-wider text-sm">Saldo Total</p>
+          <p className="text-gray-500 dark:text-gray-400 font-medium mb-2 uppercase tracking-wider text-sm">Saldo Total</p>
           {hasAccounts ? (
-            <h1 className="text-5xl md:text-7xl font-heading font-extrabold text-white tracking-tighter">
-              R$ {balInt}<span className="text-gray-500">,{balDec}</span>
+            <h1 className="text-5xl md:text-7xl font-heading font-extrabold text-gray-900 dark:text-white tracking-tighter">
+              R$ {balInt}<span className="text-gray-400 dark:text-gray-500">,{balDec}</span>
             </h1>
           ) : (
             <div>
-              <h1 className="text-5xl md:text-7xl font-heading font-extrabold text-gray-700 tracking-tighter">
-                R$ --<span className="text-gray-800">,--</span>
+              <h1 className="text-5xl md:text-7xl font-heading font-extrabold text-gray-300 dark:text-gray-700 tracking-tighter">
+                R$ --<span className="text-gray-200 dark:text-gray-800">,--</span>
               </h1>
               <button
                 onClick={onGoToCards}
@@ -100,24 +100,24 @@ export function OverviewTab({ accounts = [], onGoToCards }) {
           <MonthlyExpensesChart accounts={accounts} onGoToAccounts={onGoToCards} />
 
           <div>
-            <h3 className="text-lg font-heading font-bold text-white mb-4">Últimas Transações</h3>
+            <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white mb-4">Últimas Transações</h3>
             <div className="flex flex-col gap-3">
               {transactions.map(t => (
                 <div
                   key={t.id}
-                  className="group relative flex items-center justify-between p-4 bg-dark-surface/50 border border-dark-border rounded-xl hover:bg-dark-surface transition-all overflow-hidden"
+                  className="group relative flex items-center justify-between p-4 bg-white dark:bg-dark-surface/50 border border-gray-200 dark:border-dark-border rounded-xl hover:bg-gray-50 dark:hover:bg-dark-surface transition-all overflow-hidden"
                 >
                   <div className="absolute inset-y-0 left-0 w-1 bg-accent transform -translate-x-full group-hover:translate-x-0 transition-transform" />
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-dark-bg border border-dark-border flex items-center justify-center group-hover:border-accent/50 transition-colors">
-                      <t.icon className="w-5 h-5 text-gray-300 group-hover:text-white transition-colors" />
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-dark-bg border border-gray-200 dark:border-dark-border flex items-center justify-center group-hover:border-accent/50 transition-colors">
+                      <t.icon className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-200">{t.name}</p>
+                      <p className="font-semibold text-gray-800 dark:text-gray-200">{t.name}</p>
                       <p className="text-xs text-gray-500">{t.date}</p>
                     </div>
                   </div>
-                  <p className={`font-bold font-heading ${t.type === 'in' ? 'text-white' : 'text-gray-300'}`}>
+                  <p className={`font-bold font-heading ${t.type === 'in' ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
                     {t.type === 'in' ? '+' : '-'}R$ {brl(Math.abs(t.amount))}
                   </p>
                 </div>
@@ -131,10 +131,10 @@ export function OverviewTab({ accounts = [], onGoToCards }) {
 
           {/* 50/30/20 */}
           <Card withAccent={false}>
-            <h3 className="text-lg font-heading font-bold text-white mb-1">Regra 50/30/20</h3>
+            <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white mb-1">Regra 50/30/20</h3>
             {!hasAccounts ? (
               <div className="mt-4 flex flex-col items-center gap-3 py-6 text-center">
-                <Link2 className="w-8 h-8 text-gray-700" />
+                <Link2 className="w-8 h-8 text-gray-300 dark:text-gray-700" />
                 <p className="text-sm text-gray-500">Conecte uma conta para calcular sua divisão automaticamente.</p>
                 <button
                   onClick={onGoToCards}
@@ -147,30 +147,30 @@ export function OverviewTab({ accounts = [], onGoToCards }) {
               <div className="flex flex-col gap-5 mt-4">
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-400">Necessidades (50%)</span>
-                    <span className="text-white font-semibold">
+                    <span className="text-gray-600 dark:text-gray-400">Necessidades (50%)</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">
                       R$ {brl(needsSpent)} / {brl(needsBudget)}
                     </span>
                   </div>
-                  <ProgressBar value={(needsSpent / needsBudget) * 100} color="bg-white" />
+                  <ProgressBar value={(needsSpent / needsBudget) * 100} color="bg-gray-900 dark:bg-white" />
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-400">Lazer (30%)</span>
-                    <span className="text-white font-semibold">
+                    <span className="text-gray-600 dark:text-gray-400">Lazer (30%)</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">
                       R$ {brl(wantsSpent)} / {brl(wantsBudget)}
                     </span>
                   </div>
-                  <ProgressBar value={(wantsSpent / wantsBudget) * 100} color="bg-gray-400" />
+                  <ProgressBar value={(wantsSpent / wantsBudget) * 100} color="bg-gray-500 dark:bg-gray-400" />
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-400">Investimentos (20%)</span>
+                    <span className="text-gray-600 dark:text-gray-400">Investimentos (20%)</span>
                     <span className="text-accent font-semibold">
                       R$ {brl(savingsActual)} / {brl(savingsBudget)}
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-dark-bg rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
                     <motion.div
                       className="h-full bg-accent rounded-full shadow-[0_0_10px_#ef233c]"
                       initial={{ width: 0 }}
@@ -189,23 +189,23 @@ export function OverviewTab({ accounts = [], onGoToCards }) {
               <div className="w-8 h-8 rounded bg-accent/10 flex items-center justify-center">
                 <Target className="w-4 h-4 text-accent" />
               </div>
-              <h3 className="text-lg font-heading font-bold text-white">Meta de Reserva</h3>
+              <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white">Meta de Reserva</h3>
             </div>
-            <p className="text-3xl font-heading font-bold text-white mb-1">R$ 15.000</p>
-            <p className="text-sm text-gray-400 mb-4">Reserva de Emergência · 80% concluída</p>
-            <div className="h-1.5 w-full bg-dark-bg rounded-full overflow-hidden relative">
+            <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white mb-1">R$ 15.000</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Reserva de Emergência · 80% concluída</p>
+            <div className="h-1.5 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden relative">
               <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent to-red-600 rounded-full w-[80%]" />
             </div>
           </Card>
 
           {/* Alert */}
-          <Card className="border-accent/30 bg-accent/5">
+          <Card className="bg-accent/5 dark:bg-accent/5 border-accent/30 dark:border-accent/30">
             <div className="flex items-start gap-4">
               <AlertTriangle className="w-5 h-5 text-accent animate-pulse mt-1 shrink-0" />
               <div>
-                <h4 className="font-bold text-white mb-1 tracking-tight">Alerta de Gastos</h4>
-                <p className="text-sm text-gray-400 leading-relaxed">
-                  Você está próximo do limite em <span className="text-gray-200 font-semibold">Restaurantes</span>. Restam R$ 45 para este mês.
+                <h4 className="font-bold text-gray-900 dark:text-white mb-1 tracking-tight">Alerta de Gastos</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Você está próximo do limite em <span className="text-gray-900 dark:text-gray-200 font-semibold">Restaurantes</span>. Restam R$ 45 para este mês.
                 </p>
               </div>
             </div>

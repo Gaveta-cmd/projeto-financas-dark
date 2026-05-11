@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, LayoutDashboard,
-  Settings, User, Sliders, Zap,
+  Settings, User, Sliders,
   Lock, AlertTriangle, MessageCircle,
   LogOut, ChevronLeft,
 } from 'lucide-react';
@@ -17,7 +17,6 @@ const SETTINGS_MENU = [
     items: [
       { id: 'profile',      label: 'Perfil',       icon: User    },
       { id: 'preferences', label: 'Preferências', icon: Sliders  },
-      { id: 'subscription', label: 'Assinatura', icon: Zap      },
     ],
   },
   {

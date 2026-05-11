@@ -13,7 +13,7 @@ const SUBJECTS = [
   'Outro',
 ];
 
-export function ReportProblem({ session }) {
+export function ReportProblem() {
   const [subject,     setSubject]     = useState('');
   const [description, setDescription] = useState('');
   const [loading,     setLoading]     = useState(false);
@@ -50,10 +50,10 @@ export function ReportProblem({ session }) {
       setStatus('error');
       setErrorMsg('Não foi possível enviar o relato. Tente novamente.');
     } else {
-      const userName = session.user.user_metadata?.full_name || '';
-      const userEmail = session.user.email || '';
+      // Identidade é resolvida no servidor via auth.getUser() — não enviamos
+      // userEmail/userName do client porque seriam forjáveis.
       await supabase.functions.invoke('notify-support', {
-        body: { subject, description: description.trim(), userEmail, userName },
+        body: { subject, description: description.trim() },
       });
 
       setStatus('success');
@@ -66,7 +66,7 @@ export function ReportProblem({ session }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-dark-bg px-4 py-8 md:py-12">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-bg px-4 pt-28 lg:pt-12 pb-24 md:pb-12">
       <div className="max-w-2xl mx-auto space-y-8">
 
         {/* Header */}

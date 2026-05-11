@@ -48,6 +48,7 @@ export function Dashboard({ accounts = [], onConnect, onDisconnect, onGoToGoals 
               accounts={accounts}
               onGoToTransactions={() => setSubTab('transactions')}
               onGoToGoals={onGoToGoals}
+              onGoToBanks={() => setSubTab('cards')}
             />
           )}
           {subTab === 'transactions'  && <Transactions />}

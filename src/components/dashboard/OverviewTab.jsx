@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Utensils, Car, Gamepad2, Home, Heart, MoreHorizontal,
   Target, AlertTriangle, AlertCircle, Plus, Repeat, CalendarClock, CreditCard,
-  ArrowUpRight, ArrowDownLeft,
+  ArrowUpRight, ArrowDownLeft, Landmark,
 } from 'lucide-react';
 
 import { Card } from '../Card';
@@ -134,8 +134,10 @@ function LoadingState() {
   );
 }
 
-// ─── Empty state (zero transactions) ──────────────────────────────────────
-function EmptyOverview({ onGoToTransactions }) {
+// ─── Empty state (sem bancos conectados) ──────────────────────────────────
+// Convida a conectar um banco — onde mora todo o seed automático que
+// alimenta saldo, transações, categorias, parcelamentos e assinaturas.
+function EmptyOverview({ onGoToBanks }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -144,21 +146,21 @@ function EmptyOverview({ onGoToTransactions }) {
       className="flex flex-col items-center text-center py-20 bg-white dark:bg-dark-surface border border-dashed border-gray-200 dark:border-dark-border rounded-2xl"
     >
       <div className="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-5">
-        <Plus className="w-8 h-8 text-accent" />
+        <Landmark className="w-8 h-8 text-accent" />
       </div>
       <h2 className="text-2xl md:text-3xl font-heading font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">
-        Comece pela primeira <span className="text-accent">transação</span>
+        Conecte um <span className="text-accent">banco</span> para começar
       </h2>
       <p className="text-gray-500 text-sm max-w-sm leading-relaxed mb-6">
-        A Visão Geral é alimentada pelas suas receitas e despesas. Sem transações, não há saldo, regra 50/30/20 nem gráfico para mostrar.
+        A Visão Geral, transações, categorias e parcelamentos vêm direto dos seus bancos. Conecte uma conta pra ver tudo populado automaticamente.
       </p>
-      {onGoToTransactions && (
+      {onGoToBanks && (
         <button
-          onClick={onGoToTransactions}
+          onClick={onGoToBanks}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-accent/20"
         >
-          <Plus className="w-4 h-4" />
-          Adicionar transação
+          <Landmark className="w-4 h-4" />
+          Ir para Bancos
         </button>
       )}
     </motion.div>
@@ -199,7 +201,7 @@ function TransactionRow({ tx }) {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────
-export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals }) {
+export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, onGoToBanks }) {
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState('');
   const [transactions, setTransactions]   = useState([]);
@@ -417,10 +419,10 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals }) 
 
   const hasTransactions = transactions.length > 0;
   const hasAccounts     = accounts.length > 0;
-  // Só consideramos "vazio" se o usuário não tem NEM bancos conectados NEM
-  // transações — senão dá pra mostrar saldo e KPIs com os dados disponíveis.
-  if (!hasTransactions && !hasAccounts) {
-    return <EmptyOverview onGoToTransactions={onGoToTransactions} />;
+  // Sem banco conectado = sem onboarding feito. Mostra empty state que
+  // direciona pra aba Bancos — é lá que o seed automático popula tudo.
+  if (!hasAccounts) {
+    return <EmptyOverview onGoToBanks={onGoToBanks} />;
   }
 
   const [balInt, balDec] = brl(Math.abs(stats.saldo)).split(',');

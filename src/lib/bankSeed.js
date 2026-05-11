@@ -1,27 +1,32 @@
 // =====================================================================
-// bankSeed.js — simulação de dados ao "conectar" um banco.
+// bankSeed.js — simulação de "conectar banco".
 //
 // O app não fala com bancos reais; "conectar" é uma simulação. Pra que
 // o resto da experiência (Visão Geral, Transações, Categorias, Gráfico
 // mensal, Parcelamentos, Assinaturas) tenha conteúdo realista, ao
 // conectar um banco a gente popula o Supabase com:
-//   - ~12 transações dos últimos 30 dias (1 receita + 11 despesas
-//     espalhadas pelas categorias);
-//   - 2 assinaturas mensais (Netflix, Spotify);
-//   - 1 parcelamento em andamento (Notebook 12x).
+//   - 20 transações dos últimos 90 dias (mix de receitas e despesas);
+//   - 3 parcelamentos em andamento (iPhone, Notebook, TV);
+//   - 3 assinaturas mensais (Netflix, Spotify, Academia).
 //
-// Cada registro recebe o sufixo " · <Nome do Banco>" no título/nome.
-// Isso serve pra:
-//   1. mostrar pro usuário de onde o dado veio;
-//   2. permitir limpar tudo de um banco específico via ilike no
-//      desconectar (clearBankData).
+// Cada banco gera dados com perfil próprio:
+//   - Bancos digitais (Nubank, Inter, C6, PicPay) → mais delivery,
+//     transporte por app e streaming.
+//   - Bancos tradicionais (Itaú, Bradesco, Santander, Caixa) → mais
+//     supermercado, combustível e contas físicas.
 //
-// Os valores são levemente aleatorizados (jitter ±15%) pra que cada
-// banco mostre números um pouco diferentes — sensação de "extrato real".
+// Identificação:
+//   Cada linha inserida leva `bank_source = bank.id`. Isso permite a
+//   limpeza precisa em clearBankData via `eq('bank_source', bank.id)`,
+//   sem afetar registros criados manualmente pelo usuário (que ficam
+//   com bank_source = NULL).
+//
+// Pré-requisito: migration 20260511050000_bank_source.sql aplicada.
 // =====================================================================
 
 import { supabase } from './supabaseClient';
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
 function isoDay(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -41,67 +46,177 @@ function daysAhead(n) {
   return isoDay(d);
 }
 
-// Variação ±15% pra evitar valores idênticos entre bancos.
+// Variação leve (±10%) em valores monetários pra que cada banco
+// mostre números levemente diferentes.
 function jitter(base) {
-  const factor = 0.85 + Math.random() * 0.30;
+  const factor = 0.90 + Math.random() * 0.20;
   return Number((base * factor).toFixed(2));
 }
 
-// Templates — referenciam o sufixo do banco no momento do seed.
-function buildTransactions(tag) {
-  return [
-    { title: `Salário${tag}`,        amount: jitter(4200), category: 'outros',      type: 'income',  date: daysAgo(28) },
-    { title: `Aluguel${tag}`,        amount: jitter(1500), category: 'moradia',     type: 'expense', date: daysAgo(25) },
-    { title: `Mercado Extra${tag}`,  amount: jitter(280),  category: 'alimentacao', type: 'expense', date: daysAgo(22) },
-    { title: `Uber${tag}`,           amount: jitter(32),   category: 'transporte',  type: 'expense', date: daysAgo(20) },
-    { title: `iFood${tag}`,          amount: jitter(56),   category: 'alimentacao', type: 'expense', date: daysAgo(16) },
-    { title: `Farmácia${tag}`,       amount: jitter(78),   category: 'saude',       type: 'expense', date: daysAgo(14) },
-    { title: `Conta de Luz${tag}`,   amount: jitter(215),  category: 'moradia',     type: 'expense', date: daysAgo(12) },
-    { title: `Posto Shell${tag}`,    amount: jitter(200),  category: 'transporte',  type: 'expense', date: daysAgo(10) },
-    { title: `Cinema${tag}`,         amount: jitter(45),   category: 'lazer',       type: 'expense', date: daysAgo(7)  },
-    { title: `Restaurante${tag}`,    amount: jitter(110),  category: 'alimentacao', type: 'expense', date: daysAgo(5)  },
-    { title: `Mercado${tag}`,        amount: jitter(175),  category: 'alimentacao', type: 'expense', date: daysAgo(3)  },
-    { title: `Uber${tag}`,           amount: jitter(28),   category: 'transporte',  type: 'expense', date: daysAgo(1)  },
-  ];
+// ─── Classificação dos bancos ───────────────────────────────────────────────
+const DIGITAL_BANKS = new Set(['nubank', 'inter', 'c6', 'picpay']);
+
+function profileOf(bank) {
+  return DIGITAL_BANKS.has(bank.id) ? 'digital' : 'tradicional';
 }
 
-function buildSubscriptions(tag) {
-  return [
-    { name: `Netflix${tag}`, amount: 39.90, billing_cycle: 'monthly', category: 'entretenimento', color: '#ef233c', next_billing_date: daysAhead(8)  },
-    { name: `Spotify${tag}`, amount: 21.90, billing_cycle: 'monthly', category: 'entretenimento', color: '#10b981', next_billing_date: daysAhead(15) },
-  ];
+// ─── Templates de transações por perfil ─────────────────────────────────────
+// Datas em "dias atrás" para espalhar pelos últimos ~90 dias.
+// (date, title, amount, category, type)
+
+const DIGITAL_TRANSACTIONS = [
+  // Receitas
+  { d: 2,  title: 'Salário',                 amount: 4500,   category: 'outros',      type: 'income'  },
+  { d: 35, title: 'Freelance Design',        amount: 850,    category: 'outros',      type: 'income'  },
+
+  // Alimentação — delivery pesado
+  { d: 3,  title: 'iFood',                   amount: 48,     category: 'alimentacao', type: 'expense' },
+  { d: 8,  title: 'iFood',                   amount: 67,     category: 'alimentacao', type: 'expense' },
+  { d: 18, title: 'iFood',                   amount: 35,     category: 'alimentacao', type: 'expense' },
+  { d: 25, title: 'Rappi',                   amount: 89,     category: 'alimentacao', type: 'expense' },
+  { d: 42, title: 'iFood',                   amount: 52,     category: 'alimentacao', type: 'expense' },
+  { d: 60, title: 'Uber Eats',               amount: 78,     category: 'alimentacao', type: 'expense' },
+
+  // Transporte — apps
+  { d: 5,  title: 'Uber',                    amount: 28,     category: 'transporte',  type: 'expense' },
+  { d: 12, title: 'Uber',                    amount: 45,     category: 'transporte',  type: 'expense' },
+  { d: 22, title: '99',                      amount: 22,     category: 'transporte',  type: 'expense' },
+  { d: 50, title: 'Uber',                    amount: 38,     category: 'transporte',  type: 'expense' },
+
+  // Lazer — streaming/games
+  { d: 15, title: 'Steam',                   amount: 89,     category: 'lazer',       type: 'expense' },
+  { d: 30, title: 'Amazon Prime Video',      amount: 19.90,  category: 'lazer',       type: 'expense' },
+  { d: 70, title: 'PlayStation Store',       amount: 199,    category: 'lazer',       type: 'expense' },
+
+  // Moradia
+  { d: 6,  title: 'Internet Vivo Fibra',     amount: 99.90,  category: 'moradia',     type: 'expense' },
+  { d: 27, title: 'Aluguel',                 amount: 1500,   category: 'moradia',     type: 'expense' },
+  { d: 33, title: 'Conta de Luz',            amount: 145,    category: 'moradia',     type: 'expense' },
+
+  // Saúde
+  { d: 20, title: 'Farmácia Drogasil',       amount: 67,     category: 'saude',       type: 'expense' },
+
+  // Outros
+  { d: 45, title: 'Amazon',                  amount: 159,    category: 'outros',      type: 'expense' },
+];
+
+const TRADICIONAL_TRANSACTIONS = [
+  // Receitas
+  { d: 2,  title: 'Salário',                       amount: 5800, category: 'outros',      type: 'income'  },
+  { d: 40, title: '13º Salário',                   amount: 2400, category: 'outros',      type: 'income'  },
+
+  // Alimentação — supermercado e padaria física
+  { d: 4,  title: 'Supermercado Extra',            amount: 425,  category: 'alimentacao', type: 'expense' },
+  { d: 7,  title: 'Padaria Real',                  amount: 32,   category: 'alimentacao', type: 'expense' },
+  { d: 11, title: 'Açougue Bom Boi',               amount: 178,  category: 'alimentacao', type: 'expense' },
+  { d: 22, title: 'Supermercado Pão de Açúcar',    amount: 287,  category: 'alimentacao', type: 'expense' },
+  { d: 28, title: 'Padaria Real',                  amount: 28,   category: 'alimentacao', type: 'expense' },
+  { d: 55, title: 'Supermercado Extra',            amount: 380,  category: 'alimentacao', type: 'expense' },
+
+  // Transporte — combustível e mecânico
+  { d: 5,  title: 'Posto Shell',                   amount: 220,  category: 'transporte',  type: 'expense' },
+  { d: 18, title: 'Posto Ipiranga',                amount: 195,  category: 'transporte',  type: 'expense' },
+  { d: 38, title: 'Mecânico Auto Center',          amount: 350,  category: 'transporte',  type: 'expense' },
+  { d: 65, title: 'Posto BR',                      amount: 240,  category: 'transporte',  type: 'expense' },
+
+  // Moradia — várias contas
+  { d: 10, title: 'Conta de Luz',                  amount: 285,  category: 'moradia',     type: 'expense' },
+  { d: 14, title: 'Conta de Água',                 amount: 95,   category: 'moradia',     type: 'expense' },
+  { d: 25, title: 'Internet Vivo',                 amount: 119.90, category: 'moradia',   type: 'expense' },
+  { d: 27, title: 'Aluguel',                       amount: 1800, category: 'moradia',     type: 'expense' },
+  { d: 28, title: 'Condomínio',                    amount: 480,  category: 'moradia',     type: 'expense' },
+
+  // Saúde
+  { d: 16, title: 'Farmácia São Paulo',            amount: 89,   category: 'saude',       type: 'expense' },
+  { d: 30, title: 'Plano de Saúde Unimed',         amount: 320,  category: 'saude',       type: 'expense' },
+
+  // Lazer
+  { d: 33, title: 'Cinema Cinemark',               amount: 65,   category: 'lazer',       type: 'expense' },
+];
+
+function buildTransactions(bank) {
+  const profile = profileOf(bank);
+  const tpl = profile === 'digital' ? DIGITAL_TRANSACTIONS : TRADICIONAL_TRANSACTIONS;
+  return tpl.map((t) => ({
+    title:       t.title,
+    amount:      jitter(t.amount),
+    category:    t.category,
+    type:        t.type,
+    date:        daysAgo(t.d),
+    bank_source: bank.id,
+  }));
 }
 
-function buildInstallments(tag) {
-  // Notebook em 12x, 3 parcelas pagas, começou há 3 meses.
-  const total = jitter(4800);
-  const count = 12;
+// ─── Templates de parcelamentos (3 por banco) ───────────────────────────────
+function buildInstallments(bank) {
+  // Os totais sofrem leve jitter pra cada banco mostrar números diferentes.
+  // installment_amount é derivado do total.
+  const items = [
+    { name: 'iPhone 15 Pro',  base: 11400, count: 12, paid: 6, startedDaysAgo: 180 },
+    { name: 'Notebook',       base: 4800,  count: 10, paid: 3, startedDaysAgo: 90  },
+    { name: 'TV Samsung',     base: 2280,  count: 6,  paid: 2, startedDaysAgo: 60  },
+  ];
+  return items.map((i) => {
+    const total = jitter(i.base);
+    return {
+      name:               i.name,
+      total_amount:       total,
+      installment_amount: Number((total / i.count).toFixed(2)),
+      total_installments: i.count,
+      paid_installments:  i.paid,
+      start_date:         daysAgo(i.startedDaysAgo),
+      bank_source:        bank.id,
+    };
+  });
+}
+
+// ─── Templates de assinaturas (3 por banco) ─────────────────────────────────
+function buildSubscriptions(bank) {
   return [
     {
-      name: `Notebook${tag}`,
-      total_amount: total,
-      installment_amount: Number((total / count).toFixed(2)),
-      total_installments: count,
-      paid_installments: 3,
-      start_date: daysAgo(90),
+      name:              'Netflix',
+      amount:            44.90,
+      billing_cycle:     'monthly',
+      category:          'entretenimento',
+      color:             '#ef233c',
+      next_billing_date: daysAhead(8),
+      bank_source:       bank.id,
+    },
+    {
+      name:              'Spotify',
+      amount:            21.90,
+      billing_cycle:     'monthly',
+      category:          'entretenimento',
+      color:             '#10b981',
+      next_billing_date: daysAhead(15),
+      bank_source:       bank.id,
+    },
+    {
+      name:              'Academia',
+      amount:            89.90,
+      billing_cycle:     'monthly',
+      category:          'saude',
+      color:             '#f59e0b',
+      next_billing_date: daysAhead(22),
+      bank_source:       bank.id,
     },
   ];
 }
 
+// ─── API pública ────────────────────────────────────────────────────────────
 /**
  * Insere dados de demonstração no Supabase para um banco recém-conectado.
- * Falha de cada tabela é isolada — uma quebra (ex.: tabela ainda sem migration)
- * não impede as outras de seguirem.
+ * Cada tabela falha de forma isolada — uma quebra (ex.: tabela ainda sem
+ * migration aplicada) não impede as outras de seguirem.
  */
 export async function seedBankData(bank) {
-  const tag = ` · ${bank.name}`;
   const [txRes, subRes, insRes] = await Promise.all([
-    supabase.from('transactions').insert(buildTransactions(tag)),
-    supabase.from('subscriptions').insert(buildSubscriptions(tag)),
-    supabase.from('installments').insert(buildInstallments(tag)),
+    supabase.from('transactions').insert(buildTransactions(bank)),
+    supabase.from('subscriptions').insert(buildSubscriptions(bank)),
+    supabase.from('installments').insert(buildInstallments(bank)),
   ]);
   return {
-    transactions: !txRes.error,
+    transactions:  !txRes.error,
     subscriptions: !subRes.error,
     installments:  !insRes.error,
     errors: [txRes.error, subRes.error, insRes.error].filter(Boolean),
@@ -109,15 +224,15 @@ export async function seedBankData(bank) {
 }
 
 /**
- * Remove os dados de demonstração de um banco específico (match por sufixo
- * " · <Nome do Banco>" em title/name). É best-effort: se algo falhar a
+ * Remove os dados de demonstração de um banco específico — match por
+ * `bank_source = bank.id`. Linhas criadas manualmente pelo usuário
+ * (bank_source = NULL) ficam intactas. Best-effort: se algo falhar a
  * desconexão local prossegue normalmente.
  */
 export async function clearBankData(bank) {
-  const pattern = `% · ${bank.name}`;
   await Promise.all([
-    supabase.from('transactions').delete().ilike('title', pattern),
-    supabase.from('subscriptions').delete().ilike('name', pattern),
-    supabase.from('installments').delete().ilike('name', pattern),
+    supabase.from('transactions').delete().eq('bank_source', bank.id),
+    supabase.from('subscriptions').delete().eq('bank_source', bank.id),
+    supabase.from('installments').delete().eq('bank_source', bank.id),
   ]);
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutGrid, ArrowLeftRight, CalendarClock,
-  Repeat, PieChart, CreditCard,
+  Repeat, PieChart, Landmark,
 } from 'lucide-react';
 
 import { DashboardTabs } from './dashboard/DashboardTabs';
@@ -19,7 +19,7 @@ const TABS = [
   { id: 'installments',  label: 'Parcelamentos',  icon: CalendarClock   },
   { id: 'subscriptions', label: 'Assinaturas',    icon: Repeat          },
   { id: 'categories',    label: 'Categorias',     icon: PieChart        },
-  { id: 'cards',         label: 'Cartões',        icon: CreditCard      },
+  { id: 'cards',         label: 'Bancos',         icon: Landmark        },
 ];
 
 const subTabVariants = {
@@ -58,8 +58,8 @@ export function Dashboard({ accounts = [], onConnect, onDisconnect }) {
               accounts={accounts}
               onConnect={onConnect}
               onDisconnect={onDisconnect}
-              eyebrow="Seus bancos"
-              title={<>Cart<span className="text-accent">ões</span></>}
+              eyebrow="Integração Bancária"
+              title={<>Ban<span className="text-accent">cos</span></>}
             />
           )}
         </motion.div>

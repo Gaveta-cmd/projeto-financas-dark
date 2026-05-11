@@ -25,8 +25,6 @@ const CATEGORY_META = {
 const NEEDS_CATS = ['moradia', 'alimentacao', 'saude', 'transporte'];
 const WANTS_CATS = ['lazer', 'outros'];
 
-const RESERVE_TARGET = 15000;
-
 const SHORT_MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -198,13 +196,14 @@ function TransactionRow({ tx }) {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────
-export function OverviewTab({ accounts = [], onGoToTransactions }) {
+export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals }) {
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState('');
   const [transactions, setTransactions]   = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [installments, setInstallments]   = useState([]);
   const [cardsBill, setCardsBill]         = useState(0);
+  const [goalsList, setGoalsList]         = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -215,7 +214,7 @@ export function OverviewTab({ accounts = [], onGoToTransactions }) {
       // Tudo em paralelo. Cada query falha de forma isolada — só transactions
       // bloqueia a página, as outras caem para 0/[] sem alarde (ex.: cards
       // ainda não tem migration aplicada).
-      const [txRes, subRes, insRes, cardRes] = await Promise.all([
+      const [txRes, subRes, insRes, cardRes, goalsRes] = await Promise.all([
         supabase
           .from('transactions')
           .select('id, title, amount, category, type, date, created_at')
@@ -224,6 +223,10 @@ export function OverviewTab({ accounts = [], onGoToTransactions }) {
         supabase.from('subscriptions').select('amount, billing_cycle'),
         supabase.from('installments').select('installment_amount, paid_installments, total_installments'),
         supabase.from('cards').select('used_amount'),
+        supabase
+          .from('goals')
+          .select('id, name, target_amount, current_amount, deadline, color')
+          .order('deadline', { ascending: true }),
       ]);
 
       if (cancelled) return;
@@ -237,6 +240,7 @@ export function OverviewTab({ accounts = [], onGoToTransactions }) {
 
       setSubscriptions(subRes.error ? [] : (subRes.data ?? []));
       setInstallments(insRes.error ? [] : (insRes.data ?? []));
+      setGoalsList(goalsRes.error ? [] : (goalsRes.data ?? []));
 
       if (cardRes.error) {
         setCardsBill(0);
@@ -364,6 +368,26 @@ export function OverviewTab({ accounts = [], onGoToTransactions }) {
 
   const recentTransactions = useMemo(() => transactions.slice(0, 5), [transactions]);
 
+  // Resumo de metas pra exibir no widget da Visão Geral.
+  // Mostra as 3 mais urgentes (não concluídas primeiro, ordenadas por prazo).
+  const goalsSummary = useMemo(() => {
+    const withPct = goalsList.map((g) => {
+      const t = Number(g.target_amount);
+      const c = Number(g.current_amount);
+      const pct = t > 0 ? Math.min(100, (c / t) * 100) : 0;
+      return { ...g, _pct: pct, _completed: c >= t };
+    });
+    const incomplete = withPct.filter((g) => !g._completed);
+    const completed  = withPct.filter((g) =>  g._completed);
+    const top = [...incomplete, ...completed].slice(0, 3);
+    const total       = withPct.length;
+    const completedN  = completed.length;
+    const avgPct      = total > 0
+      ? withPct.reduce((s, g) => s + g._pct, 0) / total
+      : 0;
+    return { top, total, completedN, avgPct };
+  }, [goalsList]);
+
   // ─── Render ────────────────────────────────────────────────────────────
   if (loading) {
     return <LoadingState />;
@@ -391,7 +415,6 @@ export function OverviewTab({ accounts = [], onGoToTransactions }) {
 
   const [balInt, balDec] = brl(Math.abs(stats.saldo)).split(',');
   const saldoNegativo = stats.saldo < 0;
-  const reservePct = Math.min(100, Math.max(0, (stats.saldo / RESERVE_TARGET) * 100));
 
   // Alerta dinâmico: prioriza estouro de wants > needs > info da maior categoria.
   let alertTitle = 'Tudo sob controle';
@@ -596,34 +619,94 @@ export function OverviewTab({ accounts = [], onGoToTransactions }) {
             )}
           </Card>
 
-          {/* Meta de Reserva — baseada no saldo real */}
+          {/* Minhas Metas — preview real do goals */}
           <Card>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded bg-accent/10 flex items-center justify-center">
-                <Target className="w-4 h-4 text-accent" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded bg-accent/10 flex items-center justify-center">
+                  <Target className="w-4 h-4 text-accent" />
+                </div>
+                <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white">Minhas Metas</h3>
               </div>
-              <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white">Meta de Reserva</h3>
+              {goalsSummary.total > 0 && onGoToGoals && (
+                <button
+                  onClick={onGoToGoals}
+                  className="text-xs text-accent hover:text-accent/80 font-semibold transition-colors"
+                >
+                  Ver todas →
+                </button>
+              )}
             </div>
-            <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white mb-1">
-              R$ {brl(RESERVE_TARGET)}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Reserva de Emergência ·{' '}
-              <span className={reservePct >= 100 ? 'text-emerald-500 font-semibold' : ''}>
-                {reservePct.toFixed(0)}% concluída
-              </span>
-            </p>
-            <div className="h-1.5 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden relative">
-              <motion.div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent to-red-600 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${reservePct}%` }}
-                transition={{ duration: 0.9, ease: 'easeOut', delay: 0.4 }}
-              />
-            </div>
-            <p className="text-[11px] text-gray-500 mt-3">
-              Saldo atual: R$ {brl(Math.max(0, stats.saldo))}
-            </p>
+
+            {goalsSummary.total === 0 ? (
+              <div className="flex flex-col items-center text-center py-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  Nenhuma meta cadastrada ainda.
+                </p>
+                <p className="text-xs text-gray-500 mb-4 max-w-[240px]">
+                  Defina uma viagem, reserva ou compra grande e acompanhe o progresso aqui.
+                </p>
+                {onGoToGoals && (
+                  <button
+                    onClick={onGoToGoals}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent hover:bg-red-600 text-white text-xs font-semibold transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Criar primeira meta
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">
+                    {goalsSummary.avgPct.toFixed(0)}%
+                  </p>
+                  <p className="text-xs text-gray-500">conclusão média</p>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {goalsSummary.total} {goalsSummary.total === 1 ? 'meta ativa' : 'metas ativas'}
+                  {goalsSummary.completedN > 0 && (
+                    <>
+                      {' · '}
+                      <span className="text-emerald-500 font-semibold">
+                        {goalsSummary.completedN} concluída{goalsSummary.completedN === 1 ? '' : 's'}
+                      </span>
+                    </>
+                  )}
+                </p>
+
+                <div className="flex flex-col gap-3">
+                  {goalsSummary.top.map((g, i) => (
+                    <div key={g.id}>
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="text-gray-700 dark:text-gray-300 font-medium truncate pr-2">
+                          {g.name}
+                        </span>
+                        <span
+                          className="font-heading font-bold shrink-0"
+                          style={{ color: g._completed ? '#10b981' : g.color }}
+                        >
+                          {g._pct.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden relative">
+                        <motion.div
+                          className="absolute inset-y-0 left-0 rounded-full"
+                          style={{ background: g._completed ? '#10b981' : g.color }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${g._pct}%` }}
+                          transition={{ duration: 0.9, ease: 'easeOut', delay: 0.4 + i * 0.08 }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        R$ {brl(g.current_amount)} de R$ {brl(g.target_amount)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </Card>
 
           {/* Alerta dinâmico */}

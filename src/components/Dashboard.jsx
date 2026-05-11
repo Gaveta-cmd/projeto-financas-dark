@@ -28,7 +28,7 @@ const subTabVariants = {
   exit:    { opacity: 0, y: -8, transition: { duration: 0.18 } },
 };
 
-export function Dashboard({ accounts = [], onConnect, onDisconnect }) {
+export function Dashboard({ accounts = [], onConnect, onDisconnect, onGoToGoals }) {
   const [subTab, setSubTab] = useState('overview');
 
   return (
@@ -47,6 +47,7 @@ export function Dashboard({ accounts = [], onConnect, onDisconnect }) {
             <OverviewTab
               accounts={accounts}
               onGoToTransactions={() => setSubTab('transactions')}
+              onGoToGoals={onGoToGoals}
             />
           )}
           {subTab === 'transactions'  && <Transactions />}

@@ -154,6 +154,7 @@ function App() {
                     accounts={accounts}
                     onConnect={handleConnect}
                     onDisconnect={handleDisconnect}
+                    onGoToGoals={() => setActiveTab('goals')}
                   />
                 </motion.div>
               )}

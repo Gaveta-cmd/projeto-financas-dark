@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabaseClient';
 // Traduz erros comuns do Postgres/Supabase para algo acionável.
 function formatSupabaseError(err) {
   if (!err) return 'Erro desconhecido.';
-  if (err.code === '42P01') {
+  if (err.code === '42P01' || err.code === 'PGRST205') {
     return 'A tabela "goals" ainda não existe no banco. Aplique a migration 20260511030000_goals.sql no SQL Editor do Supabase.';
   }
   if (err.code === '23514') return 'Algum valor está fora do permitido (verifique nome, valores ou categoria).';

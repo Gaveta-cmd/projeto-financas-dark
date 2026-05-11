@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from './lib/supabaseClient';
+import { clearBankData } from './lib/bankSeed';
 import { Login } from './components/Login';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -85,12 +86,16 @@ function App() {
     });
   };
 
-  const handleDisconnect = (id) => {
+  const handleDisconnect = (account) => {
+    // Tira o banco da UI imediatamente pra dar resposta rápida.
     setAccounts(prev => {
-      const next = prev.filter(a => a.id !== id);
+      const next = prev.filter(a => a.id !== account.id);
       saveAccounts(next);
       return next;
     });
+    // Limpa as transações/assinaturas/parcelamentos seedados pra esse banco.
+    // Best-effort: se falhar, o usuário pode apagar manualmente nas telas.
+    clearBankData(account).catch(() => null);
   };
 
   const handleLogout = async () => {

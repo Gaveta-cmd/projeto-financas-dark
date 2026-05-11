@@ -2,9 +2,21 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, X, Repeat, AlertCircle, Calendar, Clock,
-  Tv, Heart, Briefcase, GraduationCap, MoreHorizontal,
+  Tv, Heart, Briefcase, GraduationCap, MoreHorizontal, CheckCircle2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+
+// Traduz erros comuns do Postgres/Supabase para algo acionável.
+function formatSupabaseError(err) {
+  if (!err) return 'Erro desconhecido.';
+  if (err.code === '42P01') {
+    return 'A tabela "subscriptions" ainda não existe no banco. Aplique a migration 20260511010000_subscriptions.sql no SQL Editor do Supabase.';
+  }
+  if (err.code === '23514') return 'Algum valor está fora do permitido (verifique nome, valor, ciclo ou cor).';
+  if (err.code === '42501') return 'Você não tem permissão para realizar essa ação.';
+  if (err.code === '23503') return 'Sessão expirada. Saia e entre novamente.';
+  return err.message || 'Não foi possível salvar. Tente novamente.';
+}
 
 // ─── Catálogo ──────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -114,7 +126,7 @@ function AddSubscriptionForm({ onClose, onCreated }) {
 
     if (insertErr) {
       setSaving(false);
-      setError('Não foi possível salvar. Tente novamente.');
+      setError(formatSupabaseError(insertErr));
       return;
     }
     onCreated(data);
@@ -452,6 +464,12 @@ export function SubscriptionsTab() {
   const [showAdd, setShowAdd]       = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting]     = useState(false);
+  const [toast, setToast]           = useState(null); // { type: 'success'|'error', message }
+
+  function flashToast(type, message) {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -464,7 +482,7 @@ export function SubscriptionsTab() {
 
       if (cancelled) return;
       if (error) {
-        setLoadError('Não foi possível carregar suas assinaturas.');
+        setLoadError(formatSupabaseError(error));
         setSubscriptions([]);
       } else {
         setSubscriptions(data ?? []);
@@ -481,18 +499,23 @@ export function SubscriptionsTab() {
       next.sort((a, b) => (a.next_billing_date < b.next_billing_date ? -1 : 1));
       return next;
     });
+    flashToast('success', `${sub.name} cadastrada com sucesso.`);
   };
 
   const handleDeleteConfirmed = async () => {
     if (!pendingDelete) return;
     setDeleting(true);
+    const removed = pendingDelete;
     const { error } = await supabase
       .from('subscriptions')
       .delete()
       .eq('id', pendingDelete.id);
     if (!error) {
-      setSubscriptions((prev) => prev.filter((s) => s.id !== pendingDelete.id));
+      setSubscriptions((prev) => prev.filter((s) => s.id !== removed.id));
       setPendingDelete(null);
+      flashToast('success', `${removed.name} removida.`);
+    } else {
+      flashToast('error', formatSupabaseError(error));
     }
     setDeleting(false);
   };
@@ -509,7 +532,31 @@ export function SubscriptionsTab() {
   }, [subscriptions]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Toast (canto superior) */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key="toast"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+            className={`fixed top-4 right-4 z-[70] flex items-start gap-2 max-w-sm px-4 py-3 rounded-xl border shadow-2xl ${
+              toast.type === 'success'
+                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500'
+                : 'bg-accent/15 border-accent/30 text-accent'
+            }`}
+          >
+            {toast.type === 'success'
+              ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            }
+            <p className="text-sm font-medium leading-snug">{toast.message}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

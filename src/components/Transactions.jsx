@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, ArrowUpRight, ArrowDownLeft, X,
-  Utensils, Car, Gamepad2, Home, Heart, MoreHorizontal,
+  Utensils, Car, Gamepad2, Home, Heart, MoreHorizontal, Target,
   Calendar, Tag, AlertCircle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
+// Catálogo completo (inclui 'metas' usado pelos aportes vindos da tela de Metas).
 const CATEGORIES = [
   { key: 'alimentacao', label: 'Alimentação', icon: Utensils,        color: '#ef233c' },
   { key: 'transporte',  label: 'Transporte',  icon: Car,             color: '#6366f1' },
@@ -14,7 +15,12 @@ const CATEGORIES = [
   { key: 'moradia',     label: 'Moradia',     icon: Home,            color: '#10b981' },
   { key: 'saude',       label: 'Saúde',       icon: Heart,           color: '#ec4899' },
   { key: 'outros',      label: 'Outros',      icon: MoreHorizontal,  color: '#71717a' },
+  { key: 'metas',       label: 'Metas',       icon: Target,          color: '#8b5cf6' },
 ];
+
+// 'metas' não aparece no picker de "Nova transação" — só vem via aporte em
+// uma meta na tela de Metas.
+const FORM_CATEGORIES = CATEGORIES.filter((c) => c.key !== 'metas');
 
 const CATEGORY_BY_KEY = Object.fromEntries(CATEGORIES.map(c => [c.key, c]));
 
@@ -193,7 +199,7 @@ function AddTransactionForm({ onClose, onCreated }) {
                   Categoria
                 </label>
                 <div className="grid grid-cols-3 gap-2">
-                  {CATEGORIES.map((cat) => {
+                  {FORM_CATEGORIES.map((cat) => {
                     const Icon = cat.icon;
                     const active = category === cat.key;
                     return (

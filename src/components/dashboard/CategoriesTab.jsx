@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
-  Utensils, Car, Gamepad2, Home, Heart, MoreHorizontal,
+  Utensils, Car, Gamepad2, Home, Heart, MoreHorizontal, Target,
   PieChart as PieIcon, AlertCircle,
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus,
 } from 'lucide-react';
@@ -15,6 +15,7 @@ const CATEGORIES = [
   { key: 'moradia',     label: 'Moradia',     icon: Home,           color: '#10b981' },
   { key: 'saude',       label: 'Saúde',       icon: Heart,          color: '#ec4899' },
   { key: 'outros',      label: 'Outros',      icon: MoreHorizontal, color: '#71717a' },
+  { key: 'metas',       label: 'Metas',       icon: Target,         color: '#8b5cf6' },
 ];
 
 const CATEGORY_BY_KEY = Object.fromEntries(CATEGORIES.map((c) => [c.key, c]));

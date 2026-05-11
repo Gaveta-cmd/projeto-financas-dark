@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingDown, TrendingUp, BarChart2, Plus } from 'lucide-react';
 import { Card } from './Card';
 
-// Mesmas categorias usadas em Transactions (inclui "saude").
+// Mesmas categorias usadas em Transactions (inclui "saude" e "metas").
 const CATEGORIES = [
   { key: 'alimentacao', label: 'Alimentação', color: '#ef233c' },
   { key: 'transporte',  label: 'Transporte',  color: '#6366f1' },
@@ -15,6 +15,7 @@ const CATEGORIES = [
   { key: 'moradia',     label: 'Moradia',     color: '#10b981' },
   { key: 'saude',       label: 'Saúde',       color: '#ec4899' },
   { key: 'outros',      label: 'Outros',      color: '#71717a' },
+  { key: 'metas',       label: 'Metas',       color: '#8b5cf6' },
 ];
 
 const FILTER_TABS = [{ key: 'all', label: 'Todos', color: '#ef233c' }, ...CATEGORIES];

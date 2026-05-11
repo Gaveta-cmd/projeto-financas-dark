@@ -371,6 +371,31 @@ function AddDepositModal({ goal, onClose, onSaved }) {
       return;
     }
     setSaving(true);
+
+    // Aporte em meta = transação real (categoria 'metas'). Faz primeiro
+    // o insert da transação porque, se ele falhar (ex.: tabela sem a
+    // categoria nova ainda, RLS, etc), a gente aborta sem mexer na meta.
+    const { error: txErr } = await supabase
+      .from('transactions')
+      .insert({
+        title: `Meta: ${goal.name}`.slice(0, 120),
+        amount: parsedAmount,
+        category: 'metas',
+        type: 'expense',
+        date: todayISO(),
+      });
+
+    if (txErr) {
+      setSaving(false);
+      // Mensagem dedicada quando a migration de metas ainda não rodou.
+      if (txErr.code === '23514') {
+        setError('Atualize o banco: rode a migration 20260511040000_add_metas_category.sql no SQL Editor do Supabase.');
+      } else {
+        setError(formatSupabaseError(txErr));
+      }
+      return;
+    }
+
     const { data, error: updateErr } = await supabase
       .from('goals')
       .update({ current_amount: newCurrent })

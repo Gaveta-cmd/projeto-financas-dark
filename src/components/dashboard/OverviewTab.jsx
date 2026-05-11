@@ -19,9 +19,12 @@ const CATEGORY_META = {
   moradia:     { label: 'Moradia',     icon: Home,           color: '#10b981' },
   saude:       { label: 'Saúde',       icon: Heart,          color: '#ec4899' },
   outros:      { label: 'Outros',      icon: MoreHorizontal, color: '#71717a' },
+  metas:       { label: 'Metas',       icon: Target,         color: '#8b5cf6' },
 };
 
-// Regra 50/30/20: essenciais vs supérfluos.
+// Regra 50/30/20: essenciais vs supérfluos. Aportes em metas (categoria 'metas')
+// não entram em nenhum dos dois — eles são contabilizados como POUPANÇA real
+// na seção "Investimentos (20%)" mais abaixo.
 const NEEDS_CATS = ['moradia', 'alimentacao', 'saude', 'transporte'];
 const WANTS_CATS = ['lazer', 'outros'];
 
@@ -274,16 +277,17 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals }) 
       monthlyMap.set(monthKey(d), {
         month: SHORT_MONTHS[d.getMonth()],
         alimentacao: 0, transporte: 0, lazer: 0,
-        moradia: 0, saude: 0, outros: 0,
+        moradia: 0, saude: 0, outros: 0, metas: 0,
       });
     }
 
-    let totalIncome  = 0;
-    let totalExpense = 0;
-    let currIncome   = 0;
-    let currExpense  = 0;
-    let needsSpent   = 0;
-    let wantsSpent   = 0;
+    let totalIncome      = 0;
+    let totalExpense     = 0;
+    let currIncome       = 0;
+    let currExpense      = 0;
+    let needsSpent       = 0;
+    let wantsSpent       = 0;
+    let goalsContributed = 0; // aportes em metas no mês atual
     const currCategorySpend = {};
 
     for (const t of transactions) {
@@ -301,6 +305,7 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals }) 
           currCategorySpend[t.category] = (currCategorySpend[t.category] ?? 0) + amt;
           if (NEEDS_CATS.includes(t.category)) needsSpent += amt;
           else if (WANTS_CATS.includes(t.category)) wantsSpent += amt;
+          if (t.category === 'metas') goalsContributed += amt;
         }
         const key = monthKey(d);
         if (monthlyMap.has(key)) {
@@ -331,7 +336,12 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals }) 
     const needsBudget  = baseBudget * 0.50;
     const wantsBudget  = baseBudget * 0.30;
     const savingsBudget = baseBudget * 0.20;
-    const savingsActual = Math.max(0, currIncome - currExpense);
+    // Poupança real do mês = aportes explícitos em metas + sobra (receita - gastos).
+    // Como currExpense já inclui os aportes, somar goalsContributed garante que
+    // o dinheiro que foi pra metas continue contando como poupado, e não como
+    // gasto perdido.
+    const leftover = currIncome - currExpense;
+    const savingsActual = Math.max(0, goalsContributed + Math.max(0, leftover));
 
     // Categoria com maior gasto do mês corrente (para o alerta).
     let topCategory = null;

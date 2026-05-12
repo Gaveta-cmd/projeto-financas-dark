@@ -22,17 +22,23 @@ const CATEGORY_META = {
   metas:       { label: 'Metas',       icon: Target,         color: '#8b5cf6' },
 };
 
-// Regra 50/30/20: essenciais vs supérfluos. Aportes em metas (categoria 'metas')
-// não entram em nenhum dos dois — eles são contabilizados como POUPANÇA real
-// na seção "Investimentos (20%)" mais abaixo.
+// Regra 50/30/20 — segue a divisão clássica:
+//   50% Necessidades → moradia, alimentação, saúde, transporte
+//   30% Lazer        → categoria lazer
+//   20% Investimento → o restante da renda do mês (leftover = receita − despesas)
 const NEEDS_CATS = ['moradia', 'alimentacao', 'saude', 'transporte'];
-const WANTS_CATS = ['lazer', 'outros'];
+const WANTS_CATS = ['lazer'];
 
 const SHORT_MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function brl(n) {
-  return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  const num = Number(n);
+  if (!Number.isFinite(num)) return '0,00';
+  return num.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function startOfMonth(d) {
@@ -84,14 +90,30 @@ const itemVariants = {
 
 // ─── ProgressBar ───────────────────────────────────────────────────────────
 function ProgressBar({ value, color = 'bg-gray-900 dark:bg-white' }) {
+  const v = Number.isFinite(value) ? Math.min(Math.max(value, 0), 100) : 0;
   return (
     <div className="h-2 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
       <motion.div
         className={`h-full rounded-full ${color}`}
         initial={{ width: 0 }}
-        animate={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
+        animate={{ width: `${v}%` }}
         transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }}
       />
+    </div>
+  );
+}
+
+// ─── Linha da Regra 50/30/20 ───────────────────────────────────────────────
+function Rule50Row({ label, actual, budget, pct, barClass, valueClass }) {
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-2 gap-3">
+        <span className="text-gray-600 dark:text-gray-400 shrink-0">{label}</span>
+        <span className={`font-semibold tabular-nums text-right ${valueClass}`}>
+          R$ {brl(actual)} / R$ {brl(budget)}
+        </span>
+      </div>
+      <ProgressBar value={pct} color={barClass} />
     </div>
   );
 }
@@ -283,13 +305,12 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
       });
     }
 
-    let totalIncome      = 0;
-    let totalExpense     = 0;
-    let currIncome       = 0;
-    let currExpense      = 0;
-    let needsSpent       = 0;
-    let wantsSpent       = 0;
-    let goalsContributed = 0; // aportes em metas no mês atual
+    let totalIncome  = 0;
+    let totalExpense = 0;
+    let currIncome   = 0;
+    let currExpense  = 0;
+    let needsSpent   = 0;
+    let wantsSpent   = 0;
     const currCategorySpend = {};
 
     for (const t of transactions) {
@@ -307,7 +328,6 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
           currCategorySpend[t.category] = (currCategorySpend[t.category] ?? 0) + amt;
           if (NEEDS_CATS.includes(t.category)) needsSpent += amt;
           else if (WANTS_CATS.includes(t.category)) wantsSpent += amt;
-          if (t.category === 'metas') goalsContributed += amt;
         }
         const key = monthKey(d);
         if (monthlyMap.has(key)) {
@@ -321,29 +341,19 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
     // ter cadastrado nenhuma transação.
     const saldo = bankBalance + totalIncome - totalExpense;
 
-    // Base do 50/30/20: prefere receita do mês; cai para saldo dos bancos
-    // conectados; por último, para receita total acumulada.
-    let baseBudget;
-    let baseLabel;
-    if (currIncome > 0) {
-      baseBudget = currIncome;
-      baseLabel  = `Base: receita do mês (R$ ${brl(currIncome)})`;
-    } else if (bankBalance > 0) {
-      baseBudget = bankBalance;
-      baseLabel  = `Base: saldo dos bancos (R$ ${brl(bankBalance)})`;
-    } else {
-      baseBudget = totalIncome;
-      baseLabel  = `Base: receita total (R$ ${brl(totalIncome)})`;
-    }
-    const needsBudget  = baseBudget * 0.50;
-    const wantsBudget  = baseBudget * 0.30;
-    const savingsBudget = baseBudget * 0.20;
-    // Poupança real do mês = aportes explícitos em metas + sobra (receita - gastos).
-    // Como currExpense já inclui os aportes, somar goalsContributed garante que
-    // o dinheiro que foi pra metas continue contando como poupado, e não como
-    // gasto perdido.
-    const leftover = currIncome - currExpense;
-    const savingsActual = Math.max(0, goalsContributed + Math.max(0, leftover));
+    // Base do 50/30/20: ESTRITAMENTE a receita do mês atual (sem fallback
+    // de saldo bancário — antigamente isso gerava limites absurdos quando
+    // o usuário tinha saldo alto mas nenhuma receita registrada).
+    const base = currIncome;
+    const hasBase = base > 0;
+    const needsBudget   = base * 0.50;
+    const wantsBudget   = base * 0.30;
+    const savingsBudget = base * 0.20;
+    // "Restante" = receita do mês − despesas do mês (nunca negativo).
+    const savingsActual = Math.max(0, currIncome - currExpense);
+    const baseLabel = hasBase
+      ? `Base: receita do mês — R$ ${brl(base)}`
+      : 'Sem receitas registradas neste mês';
 
     // Categoria com maior gasto do mês corrente (para o alerta).
     let topCategory = null;
@@ -417,8 +427,7 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
     );
   }
 
-  const hasTransactions = transactions.length > 0;
-  const hasAccounts     = accounts.length > 0;
+  const hasAccounts = accounts.length > 0;
   // Sem banco conectado = sem onboarding feito. Mostra empty state que
   // direciona pra aba Bancos — é lá que o seed automático popula tudo.
   if (!hasAccounts) {
@@ -578,57 +587,51 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
           <Card withAccent={false}>
             <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white mb-1">Regra 50/30/20</h3>
             <p className="text-xs text-gray-500 mb-4">{stats.baseLabel}</p>
-            {stats.needsBudget === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-6 text-center">
-                <Target className="w-8 h-8 text-gray-300 dark:text-gray-700" />
-                <p className="text-sm text-gray-500">
-                  Cadastre uma receita para calcular sua divisão 50/30/20.
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-5">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600 dark:text-gray-400">Necessidades (50%)</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">
-                      R$ {brl(stats.needsSpent)} / {brl(stats.needsBudget)}
-                    </span>
-                  </div>
-                  <ProgressBar
-                    value={(stats.needsSpent / stats.needsBudget) * 100}
-                    color={stats.needsSpent / stats.needsBudget > 1 ? 'bg-accent' : 'bg-gray-900 dark:bg-white'}
+            {(() => {
+              const hasBase = stats.needsBudget > 0;
+              const needsPct = hasBase ? (stats.needsSpent / stats.needsBudget) * 100 : 0;
+              const wantsPct = hasBase ? (stats.wantsSpent / stats.wantsBudget) * 100 : 0;
+              const savingsPct = hasBase ? (stats.savingsActual / stats.savingsBudget) * 100 : 0;
+              const needsOver = hasBase && stats.needsSpent > stats.needsBudget;
+              const wantsOver = hasBase && stats.wantsSpent > stats.wantsBudget;
+              const savingsHit = hasBase && stats.savingsActual >= stats.savingsBudget;
+
+              const neutralText = 'text-gray-500';
+              const okText = 'text-emerald-500';
+              const badText = 'text-accent';
+              const okBar = 'bg-emerald-500';
+              const badBar = 'bg-accent';
+              const neutralBar = 'bg-gray-400 dark:bg-gray-600';
+
+              return (
+                <div className="flex flex-col gap-5">
+                  <Rule50Row
+                    label="Necessidades (50%)"
+                    actual={stats.needsSpent}
+                    budget={stats.needsBudget}
+                    pct={needsPct}
+                    barClass={!hasBase ? neutralBar : needsOver ? badBar : okBar}
+                    valueClass={!hasBase ? neutralText : needsOver ? badText : okText}
+                  />
+                  <Rule50Row
+                    label="Lazer (30%)"
+                    actual={stats.wantsSpent}
+                    budget={stats.wantsBudget}
+                    pct={wantsPct}
+                    barClass={!hasBase ? neutralBar : wantsOver ? badBar : okBar}
+                    valueClass={!hasBase ? neutralText : wantsOver ? badText : okText}
+                  />
+                  <Rule50Row
+                    label="Investimentos (20%)"
+                    actual={stats.savingsActual}
+                    budget={stats.savingsBudget}
+                    pct={savingsPct}
+                    barClass={!hasBase ? neutralBar : savingsHit ? okBar : badBar}
+                    valueClass={!hasBase ? neutralText : savingsHit ? okText : badText}
                   />
                 </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600 dark:text-gray-400">Lazer (30%)</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">
-                      R$ {brl(stats.wantsSpent)} / {brl(stats.wantsBudget)}
-                    </span>
-                  </div>
-                  <ProgressBar
-                    value={(stats.wantsSpent / stats.wantsBudget) * 100}
-                    color={stats.wantsSpent / stats.wantsBudget > 1 ? 'bg-accent' : 'bg-gray-500 dark:bg-gray-400'}
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600 dark:text-gray-400">Investimentos (20%)</span>
-                    <span className="text-accent font-semibold">
-                      R$ {brl(stats.savingsActual)} / {brl(stats.savingsBudget)}
-                    </span>
-                  </div>
-                  <div className="h-2 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-accent rounded-full shadow-[0_0_10px_#ef233c]"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min((stats.savingsActual / Math.max(stats.savingsBudget, 1)) * 100, 100)}%` }}
-                      transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </Card>
 
           {/* Minhas Metas — preview real do goals */}

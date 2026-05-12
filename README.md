@@ -2,7 +2,11 @@
 
 > **⚠️ PROJETO EM DESENVOLVIMENTO:** Este sistema está sendo construído ativamente para fins de aprendizado e organização financeira pessoal. Funcionalidades e interface estão em constante evolução.
 
-Um dashboard de finanças pessoais focado em estética **High-End Tech**, com autenticação real, integração a bancos brasileiros, gráficos interativos e suporte via IA. O projeto utiliza uma interface baseada em um Design System minimalista com cores profundas e animações fluídas.
+Um dashboard de finanças pessoais focado em estética **High-End Tech**, com autenticação real, integração a bancos brasileiros, gráficos interativos e suporte via IA.
+
+🌐 **[Acesse o site ao vivo → projeto-financas-dark.vercel.app](https://projeto-financas-dark.vercel.app)**
+
+---
 
 ## 🚀 Status do Projeto
 Atualmente em: **Fase de Expansão de Funcionalidades e Integração com Backend**.
@@ -14,41 +18,45 @@ Atualmente em: **Fase de Expansão de Funcionalidades e Integração com Backend
 - **Lucide React** (Ícones)
 - **Supabase** (Autenticação, Banco de Dados PostgreSQL e Edge Functions)
 - **Recharts** (Gráficos interativos)
+- **Vercel** (Deploy e hospedagem)
 - **Git/GitHub** (Versionamento e Backup)
 
 ## 🎨 Design System & Estética
 O projeto segue uma identidade visual rigorosa inspirada no estilo "Linear/Vercel":
-- **Background:** `#0f0f0f` (Deep Black).
-- **Surfaces:** `#18181b` (Zinc-900) com bordas tracejadas e efeitos de brilho.
-- **Accents:** `#ef233c` (Electric Red) para destaques e ações principais.
-- **Tipografia:** `Manrope` (títulos) + `Inter` (corpo) via Google Fonts.
-- **Animações:** `fadeSlideIn`, `columnReveal`, `border-spin-gradient` e `hover-beam` para uma experiência de usuário premium.
-- **Temas:** Suporte completo a Dark / Light / Automático (detecta preferência do SO).
+- **Background:** `#0f0f0f` (Deep Black)
+- **Surfaces:** `#18181b` (Zinc-900) com bordas tracejadas e efeitos de brilho
+- **Accents:** `#ef233c` (Electric Red) para destaques e ações principais
+- **Tipografia:** `Manrope` (títulos) + `Inter` (corpo) via Google Fonts
+- **Animações:** `fadeSlideIn`, `columnReveal`, `border-spin-gradient` e `hover-beam`
+- **Temas:** Suporte completo a Dark / Light / Automático (detecta preferência do SO)
 
 ## 📊 Funcionalidades
 
 ### ✅ Implementadas
-- [x] Setup do ambiente com Vite, Tailwind CSS e ESLint.
-- [x] Autenticação completa (Sign In / Sign Up) via Supabase Auth.
-- [x] Dashboard com saldo total, transações recentes e meta de reserva de emergência.
-- [x] Regra financeira **50/30/20** com barras de progresso animadas.
-- [x] Gráfico de barras empilhadas de gastos mensais por categoria (6 meses).
-- [x] Gráfico de área com evolução do saldo ao longo do tempo.
-- [x] Integração simulada com 8 bancos brasileiros (Nubank, Inter, Itaú, Bradesco, C6, PicPay, Santander, Caixa).
-- [x] Página de Perfil com edição de nome, e-mail e WhatsApp (seletor de país).
-- [x] Troca de senha com reautenticação e validação em tempo real.
-- [x] Exclusão permanente de conta com modal de confirmação.
-- [x] Preferências de tema e efeitos sonoros.
-- [x] Chat de Suporte com IA via Edge Function do Supabase.
-- [x] Formulário de reportar problemas com salvamento no banco de dados.
-- [x] Layout totalmente responsivo (Sidebar no desktop, Bottom Nav no mobile).
+- [x] Autenticação completa (Sign In / Sign Up) via Supabase Auth
+- [x] Dashboard com abas: Visão Geral, Transações, Parcelamentos, Assinaturas, Categorias e Bancos
+- [x] Visão Geral com saldo total, KPIs, gráfico mensal e regra 50/30/20 animada
+- [x] Ao conectar um banco, popula automaticamente transações, parcelamentos e assinaturas realistas
+- [x] Ao desconectar um banco, remove todos os dados vinculados a ele
+- [x] Integração simulada com 8 bancos brasileiros (Nubank, Inter, Itaú, Bradesco, C6, PicPay, Santander, Caixa)
+- [x] Tela de Transações com cadastro manual, categorização e exclusão
+- [x] Tela de Parcelamentos com progresso visual de cada compra parcelada
+- [x] Tela de Assinaturas com serviços recorrentes e total mensal
+- [x] Tela de Categorias com gráfico de pizza e breakdown por categoria
+- [x] Tela de Metas Financeiras com progresso visual e fluxo de conquista
+- [x] Página de Perfil com edição de nome, e-mail e WhatsApp (seletor de país)
+- [x] Troca de senha com reautenticação e validação em tempo real
+- [x] Exclusão permanente de conta com modal de confirmação
+- [x] Preferências de tema e efeitos sonoros
+- [x] Chat de Suporte com IA via Edge Function do Supabase
+- [x] Formulário de reportar problemas com salvamento no banco de dados
+- [x] Layout totalmente responsivo (Sidebar no desktop, Bottom Nav no mobile)
+- [x] Deploy na Vercel com CI/CD automático a cada push
 
 ### 🔧 Em Desenvolvimento
-- [ ] Integração real com Open Finance / APIs bancárias.
-- [ ] Cadastro e categorização manual de transações.
-- [ ] Metas financeiras personalizadas.
-- [ ] Exportação de relatórios em PDF.
-- [ ] Notificações e alertas de limite de gastos.
+- [ ] Integração real com Open Finance / APIs bancárias
+- [ ] Notificações e alertas de vencimento de parcelas e assinaturas
+- [ ] Exportação de relatórios em PDF
 
 ## 💻 Como rodar o projeto localmente
 
@@ -56,7 +64,7 @@ O projeto segue uma identidade visual rigorosa inspirada no estilo "Linear/Verce
    ```bash
    git clone https://github.com/Gaveta-cmd/projeto-financas-dark.git
    cd projeto-financas-dark
-   
+
 2. Instale as dependências:
    npm install
 
@@ -64,4 +72,5 @@ O projeto segue uma identidade visual rigorosa inspirada no estilo "Linear/Verce
    VITE_SUPABASE_URL=sua_url_do_supabase
    VITE_SUPABASE_ANON_KEY=sua_chave_anonima
 
-4. Rode em modo desenvolvimento: npm run dev
+4. Rode em modo desenvolvimento:
+   npm run dev

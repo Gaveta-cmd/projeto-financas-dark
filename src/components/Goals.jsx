@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, X, AlertCircle, Calendar, Clock, Target,
   Plane, ShieldAlert, Smartphone, Car, Home, MoreHorizontal,
-  CheckCircle2, TrendingUp, Wallet,
+  CheckCircle2, TrendingUp, Wallet, Trophy, Sparkles,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -566,8 +566,112 @@ function DeleteConfirmModal({ goal, onConfirm, onCancel, deleting }) {
   );
 }
 
+// ─── Modal: celebração de conquista ────────────────────────────────────────
+function CompleteConfirmModal({ goal, onConfirm, onCancel, completing }) {
+  return (
+    <AnimatePresence>
+      {goal && (
+        <motion.div
+          key="overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+            className="relative bg-white dark:bg-dark-surface border border-emerald-500/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl shadow-emerald-500/10 overflow-hidden"
+          >
+            {/* Glow festivo no topo */}
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
+
+            <motion.div
+              initial={{ scale: 0.6, rotate: -12 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 14, delay: 0.1 }}
+              className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400/20 to-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mb-4 mx-auto"
+            >
+              <Trophy className="w-7 h-7 text-amber-400" />
+              <Sparkles className="absolute -top-1 -right-1 w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            </motion.div>
+
+            <h3 className="font-heading font-extrabold text-gray-900 dark:text-white text-xl mb-2 text-center tracking-tight">
+              Parabéns! Meta conquistada!
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed text-center">
+              Você atingiu sua meta de{' '}
+              <span className="text-gray-900 dark:text-white font-semibold">{goal.name}</span>.
+              Deseja marcá-la como conquistada e removê-la da lista?
+            </p>
+
+            <div className="flex gap-3 relative">
+              <button
+                onClick={onCancel}
+                disabled={completing}
+                className="flex-1 py-2.5 text-sm font-semibold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-dark-border rounded-lg hover:text-gray-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={onConfirm}
+                disabled={completing}
+                className="flex-1 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg transition-colors disabled:opacity-60 shadow-lg shadow-emerald-500/30"
+              >
+                {completing ? 'Conquistando…' : 'Sim, conquistei! 🎉'}
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── Burst de confetes para o card em celebração ───────────────────────────
+const CONFETTI_COLORS = ['#ef233c', '#f59e0b', '#10b981', '#6366f1', '#ec4899', '#0ea5e9'];
+const CONFETTI_PIECES = Array.from({ length: 14 }, (_, i) => {
+  const angle = (Math.PI * 2 * i) / 14 + (i % 2 ? 0.15 : 0);
+  const distance = 90 + (i % 3) * 22;
+  return {
+    id: i,
+    x: Math.cos(angle) * distance,
+    y: Math.sin(angle) * distance,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    rotate: (i * 47) % 360,
+    delay: (i % 5) * 0.03,
+  };
+});
+
+function CelebrationBurst() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center overflow-visible">
+      {CONFETTI_PIECES.map((p) => (
+        <motion.span
+          key={p.id}
+          initial={{ x: 0, y: 0, opacity: 1, scale: 0.4, rotate: 0 }}
+          animate={{
+            x: p.x,
+            y: p.y,
+            opacity: 0,
+            scale: 1.1,
+            rotate: p.rotate,
+          }}
+          transition={{ duration: 0.9, ease: 'easeOut', delay: p.delay }}
+          className="absolute w-2 h-2 rounded-sm"
+          style={{ background: p.color, boxShadow: `0 0 10px ${p.color}aa` }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── Card de meta ──────────────────────────────────────────────────────────
-function GoalCard({ goal, onAddDeposit, onDelete }) {
+function GoalCard({ goal, onAddDeposit, onDelete, onComplete, celebrating }) {
   const cat = CATEGORY_BY_KEY[goal.category] ?? CATEGORY_BY_KEY.outros;
   const Icon = cat.icon;
   const pct = progressPct(goal);
@@ -581,11 +685,14 @@ function GoalCard({ goal, onAddDeposit, onDelete }) {
     <motion.div
       variants={itemVariants}
       layout
-      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.18 } }}
-      whileHover={{ y: -2 }}
+      animate={celebrating ? { scale: [1, 1.04, 1.02], boxShadow: '0 0 0 2px #10b98166' } : undefined}
+      exit={{ opacity: 0, scale: 0.9, y: -8, transition: { duration: 0.35, ease: 'easeIn' } }}
+      transition={celebrating ? { duration: 0.55, ease: 'easeOut' } : undefined}
+      whileHover={!celebrating ? { y: -2 } : undefined}
       className="group relative p-5 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl hover:border-gray-300 dark:hover:border-white/15 transition-colors overflow-hidden"
-      style={{ boxShadow: completed ? `0 0 0 1px ${goal.color}33` : undefined }}
+      style={{ boxShadow: completed && !celebrating ? `0 0 0 1px ${goal.color}33` : undefined }}
     >
+      {celebrating && <CelebrationBurst />}
       {/* Beam lateral hover (efeito hover-beam do design system) */}
       <div
         className="absolute left-0 top-0 bottom-0 w-1 transition-transform -translate-x-full group-hover:translate-x-0"
@@ -688,28 +795,27 @@ function GoalCard({ goal, onAddDeposit, onDelete }) {
       </div>
 
       {/* CTA */}
-      <motion.button
-        whileTap={{ scale: 0.97 }}
-        onClick={() => onAddDeposit(goal)}
-        disabled={completed}
-        className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors relative ${
-          completed
-            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 cursor-default'
-            : 'bg-accent/10 border border-dashed border-accent/40 text-accent hover:bg-accent/15'
-        }`}
-      >
-        {completed ? (
-          <>
-            <CheckCircle2 className="w-4 h-4" />
-            Meta concluída
-          </>
-        ) : (
-          <>
-            <Plus className="w-4 h-4" />
-            Adicionar valor
-          </>
-        )}
-      </motion.button>
+      {completed ? (
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.01 }}
+          onClick={() => onComplete(goal)}
+          disabled={celebrating}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all relative bg-gradient-to-r from-emerald-500/15 to-amber-500/15 border border-emerald-500/40 text-emerald-500 hover:from-emerald-500/25 hover:to-amber-500/25 hover:border-emerald-500/60 disabled:opacity-60 disabled:cursor-default shadow-sm shadow-emerald-500/10"
+        >
+          <Trophy className="w-4 h-4" />
+          Marcar como conquistada 🎉
+        </motion.button>
+      ) : (
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => onAddDeposit(goal)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors relative bg-accent/10 border border-dashed border-accent/40 text-accent hover:bg-accent/15"
+        >
+          <Plus className="w-4 h-4" />
+          Adicionar valor
+        </motion.button>
+      )}
     </motion.div>
   );
 }
@@ -722,7 +828,10 @@ export function Goals() {
   const [showAdd, setShowAdd]           = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [pendingDeposit, setPendingDeposit] = useState(null);
+  const [pendingComplete, setPendingComplete] = useState(null);
   const [deleting, setDeleting]         = useState(false);
+  const [completing, setCompleting]     = useState(false);
+  const [celebratingId, setCelebratingId] = useState(null);
   const [toast, setToast]               = useState(null); // { type, message }
 
   function flashToast(type, message) {
@@ -768,6 +877,37 @@ export function Goals() {
     } else {
       flashToast('success', `R$ ${brl(updated.current_amount)} guardado em "${updated.name}".`);
     }
+  };
+
+  const handleCompleteConfirmed = async () => {
+    if (!pendingComplete) return;
+    const conquered = pendingComplete;
+    setCompleting(true);
+
+    // Fecha o modal e dispara o pulse + confetes no card antes de remover.
+    setCelebratingId(conquered.id);
+    setPendingComplete(null);
+
+    const { error } = await supabase
+      .from('goals')
+      .delete()
+      .eq('id', conquered.id);
+
+    if (error) {
+      // Em caso de falha, derruba o estado festivo e reporta o erro.
+      setCelebratingId(null);
+      setCompleting(false);
+      flashToast('error', formatSupabaseError(error));
+      return;
+    }
+
+    // Dá tempo da animação de celebração tocar antes do exit do card.
+    setTimeout(() => {
+      setGoals((prev) => prev.filter((g) => g.id !== conquered.id));
+      setCelebratingId(null);
+      setCompleting(false);
+      flashToast('success', `🏆 "${conquered.name}" conquistada! Parabéns!`);
+    }, 900);
   };
 
   const handleDeleteConfirmed = async () => {
@@ -995,6 +1135,8 @@ export function Goals() {
                 goal={goal}
                 onAddDeposit={setPendingDeposit}
                 onDelete={setPendingDelete}
+                onComplete={setPendingComplete}
+                celebrating={celebratingId === goal.id}
               />
             ))}
           </AnimatePresence>
@@ -1020,6 +1162,12 @@ export function Goals() {
         onCancel={() => setPendingDelete(null)}
         onConfirm={handleDeleteConfirmed}
         deleting={deleting}
+      />
+      <CompleteConfirmModal
+        goal={pendingComplete}
+        onCancel={() => !completing && setPendingComplete(null)}
+        onConfirm={handleCompleteConfirmed}
+        completing={completing}
       />
     </div>
   );

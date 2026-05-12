@@ -10,6 +10,7 @@ import { Card } from '../Card';
 import { Button } from '../Button';
 import { MonthlyExpensesChart } from '../MonthlyExpensesChart';
 import { supabase } from '../../lib/supabaseClient';
+import { backfillMissingLazer } from '../../lib/bankSeed';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const CATEGORY_META = {
@@ -238,6 +239,13 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
       setLoading(true);
       setError('');
 
+      // Bancos seedados antes da v2 do seed ficaram sem "lazer" no mês atual.
+      // Faz backfill ANTES das queries pra Regra 50/30/20 já ler dados completos.
+      // É best-effort e silencioso — se falhar, a tela carrega normalmente.
+      if (accounts.length > 0) {
+        try { await backfillMissingLazer(); } catch { /* ignora */ }
+      }
+
       // Tudo em paralelo. Cada query falha de forma isolada — só transactions
       // bloqueia a página, as outras caem para 0/[] sem alarde (ex.: cards
       // ainda não tem migration aplicada).
@@ -280,7 +288,9 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
     }
     load();
     return () => { cancelled = true; };
-  }, []);
+    // Recarrega quando o número de bancos conectados muda — assim o backfill
+    // de lazer roda em conexões novas e os dados refletem desconexões.
+  }, [accounts.length]);
 
   // Saldo dos bancos conectados (mock local — entra como base do saldo total
   // e como fallback de orçamento para a regra 50/30/20).
@@ -596,12 +606,20 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
               const wantsOver = hasBase && stats.wantsSpent > stats.wantsBudget;
               const savingsHit = hasBase && stats.savingsActual >= stats.savingsBudget;
 
+              // Cores por linha:
+              //   Necessidades → indigo (ok) / accent (estourado)
+              //   Lazer        → amber  (ok) / accent (estourado)
+              //   Investimentos → emerald (meta batida) / accent (abaixo)
               const neutralText = 'text-gray-500';
-              const okText = 'text-emerald-500';
-              const badText = 'text-accent';
-              const okBar = 'bg-emerald-500';
-              const badBar = 'bg-accent';
-              const neutralBar = 'bg-gray-400 dark:bg-gray-600';
+              const badText     = 'text-accent';
+              const okTextNeeds = 'text-indigo-500';
+              const okTextWants = 'text-amber-500';
+              const okTextSave  = 'text-emerald-500';
+              const badBar      = 'bg-accent';
+              const okBarNeeds  = 'bg-indigo-500';
+              const okBarWants  = 'bg-amber-500';
+              const okBarSave   = 'bg-emerald-500';
+              const neutralBar  = 'bg-gray-400 dark:bg-gray-600';
 
               return (
                 <div className="flex flex-col gap-5">
@@ -610,24 +628,24 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
                     actual={stats.needsSpent}
                     budget={stats.needsBudget}
                     pct={needsPct}
-                    barClass={!hasBase ? neutralBar : needsOver ? badBar : okBar}
-                    valueClass={!hasBase ? neutralText : needsOver ? badText : okText}
+                    barClass={!hasBase ? neutralBar : needsOver ? badBar : okBarNeeds}
+                    valueClass={!hasBase ? neutralText : needsOver ? badText : okTextNeeds}
                   />
                   <Rule50Row
                     label="Lazer (30%)"
                     actual={stats.wantsSpent}
                     budget={stats.wantsBudget}
                     pct={wantsPct}
-                    barClass={!hasBase ? neutralBar : wantsOver ? badBar : okBar}
-                    valueClass={!hasBase ? neutralText : wantsOver ? badText : okText}
+                    barClass={!hasBase ? neutralBar : wantsOver ? badBar : okBarWants}
+                    valueClass={!hasBase ? neutralText : wantsOver ? badText : okTextWants}
                   />
                   <Rule50Row
                     label="Investimentos (20%)"
                     actual={stats.savingsActual}
                     budget={stats.savingsBudget}
                     pct={savingsPct}
-                    barClass={!hasBase ? neutralBar : savingsHit ? okBar : badBar}
-                    valueClass={!hasBase ? neutralText : savingsHit ? okText : badText}
+                    barClass={!hasBase ? neutralBar : savingsHit ? okBarSave : badBar}
+                    valueClass={!hasBase ? neutralText : savingsHit ? okTextSave : badText}
                   />
                 </div>
               );

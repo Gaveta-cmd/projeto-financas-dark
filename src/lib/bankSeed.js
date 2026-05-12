@@ -83,7 +83,10 @@ const DIGITAL_TRANSACTIONS = [
   { d: 22, title: '99',                      amount: 22,     category: 'transporte',  type: 'expense' },
   { d: 50, title: 'Uber',                    amount: 38,     category: 'transporte',  type: 'expense' },
 
-  // Lazer — streaming/games
+  // Lazer — streaming/games (entradas recentes garantem dados no mês atual
+  // pra Regra 50/30/20 ter "wants" não-zerado logo após conectar o banco)
+  { d: 4,  title: 'Netflix',                 amount: 44.90,  category: 'lazer',       type: 'expense' },
+  { d: 9,  title: 'Spotify',                 amount: 21.90,  category: 'lazer',       type: 'expense' },
   { d: 15, title: 'Steam',                   amount: 89,     category: 'lazer',       type: 'expense' },
   { d: 30, title: 'Amazon Prime Video',      amount: 19.90,  category: 'lazer',       type: 'expense' },
   { d: 70, title: 'PlayStation Store',       amount: 199,    category: 'lazer',       type: 'expense' },
@@ -130,7 +133,10 @@ const TRADICIONAL_TRANSACTIONS = [
   { d: 16, title: 'Farmácia São Paulo',            amount: 89,   category: 'saude',       type: 'expense' },
   { d: 30, title: 'Plano de Saúde Unimed',         amount: 320,  category: 'saude',       type: 'expense' },
 
-  // Lazer
+  // Lazer — inclui entradas recentes pra Regra 50/30/20 enxergar "wants"
+  // no mês atual logo após conectar o banco
+  { d: 3,  title: 'Ingresso Show',                 amount: 120,  category: 'lazer',       type: 'expense' },
+  { d: 8,  title: 'Cinema Cinemark',               amount: 65,   category: 'lazer',       type: 'expense' },
   { d: 33, title: 'Cinema Cinemark',               amount: 65,   category: 'lazer',       type: 'expense' },
 ];
 
@@ -235,4 +241,54 @@ export async function clearBankData(bank) {
     supabase.from('subscriptions').delete().eq('bank_source', bank.id),
     supabase.from('installments').delete().eq('bank_source', bank.id),
   ]);
+}
+
+/**
+ * Backfill: bancos conectados ANTES desta versão do seed ficaram sem
+ * transações de "lazer" no mês atual, o que zera o bloco "Lazer (30%)"
+ * na Regra 50/30/20. Esta função detecta a falta e insere apenas o que
+ * está faltando — não duplica nada se o lazer atual já existir.
+ *
+ * Roda como best-effort: erros são silenciados pra não atrapalhar a UI.
+ * Retorna o número de transações inseridas (0 quando nada faltava).
+ */
+export async function backfillMissingLazer() {
+  // Primeiro dia do mês corrente, no horário local, em ISO 'YYYY-MM-DD'.
+  const today = new Date();
+  const monthStart = isoDay(new Date(today.getFullYear(), today.getMonth(), 1));
+
+  // Quais bancos seedados o usuário tem? (DISTINCT em bank_source não-nulo
+  // do mês atual ou anterior — basta saber quais bancos têm seed presente.)
+  const { data: existing, error: existErr } = await supabase
+    .from('transactions')
+    .select('bank_source, category, date')
+    .not('bank_source', 'is', null);
+
+  if (existErr || !existing) return 0;
+
+  // Agrupa por bank_source: precisa de lazer no mês atual? Já tem?
+  const bySource = new Map();
+  for (const row of existing) {
+    const entry = bySource.get(row.bank_source) ?? { hasAnyLazerThisMonth: false };
+    if (row.category === 'lazer' && row.date >= monthStart) {
+      entry.hasAnyLazerThisMonth = true;
+    }
+    bySource.set(row.bank_source, entry);
+  }
+
+  const toInsert = [];
+  for (const [bankId, info] of bySource.entries()) {
+    if (info.hasAnyLazerThisMonth) continue;
+    // Insere o mesmo template de lazer recente que o seed novo usa.
+    // Usa perfil "digital" como padrão — valores leves e nomes neutros.
+    toInsert.push(
+      { title: 'Netflix', amount: jitter(44.90), category: 'lazer', type: 'expense', date: daysAgo(4), bank_source: bankId },
+      { title: 'Spotify', amount: jitter(21.90), category: 'lazer', type: 'expense', date: daysAgo(9), bank_source: bankId },
+    );
+  }
+
+  if (toInsert.length === 0) return 0;
+
+  const { error: insErr } = await supabase.from('transactions').insert(toInsert);
+  return insErr ? 0 : toInsert.length;
 }

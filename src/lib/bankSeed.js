@@ -7,13 +7,20 @@
 // conectar um banco a gente popula o Supabase com:
 //   - 20 transações dos últimos 90 dias (mix de receitas e despesas);
 //   - 3 parcelamentos em andamento (iPhone, Notebook, TV);
-//   - 3 assinaturas mensais (Netflix, Spotify, Academia).
+//   - 3 assinaturas mensais — catálogo PRÓPRIO por banco (ver
+//     SUBSCRIPTIONS_BY_BANK) pra não repetir "Netflix" 8 vezes quando
+//     o usuário conecta vários bancos.
 //
 // Cada banco gera dados com perfil próprio:
 //   - Bancos digitais (Nubank, Inter, C6, PicPay) → mais delivery,
 //     transporte por app e streaming.
 //   - Bancos tradicionais (Itaú, Bradesco, Santander, Caixa) → mais
 //     supermercado, combustível e contas físicas.
+//
+// Dedup ao conectar:
+//   - Transações: dedup por (title, mês). Salário/Aluguel/Netflix de
+//     um banco bloqueia o mesmo título no mesmo mês de outros bancos.
+//   - Assinaturas e parcelamentos: dedup por `name`. Idempotente.
 //
 // Identificação:
 //   Cada linha inserida leva `bank_source = bank.id`. Isso permite a
@@ -177,54 +184,136 @@ function buildInstallments(bank) {
 }
 
 // ─── Templates de assinaturas (3 por banco) ─────────────────────────────────
+// Cada banco tem seu próprio mix pra ficar mais realista quando o usuário
+// conecta vários — em vez de aparecer "Netflix" 8 vezes, cada banco contribui
+// com serviços diferentes. Categoria precisa respeitar o CHECK do banco:
+// ('entretenimento', 'saude', 'produtividade', 'educacao', 'outros').
+const SUBSCRIPTIONS_BY_BANK = {
+  nubank: [
+    { name: 'Netflix',            amount: 44.90, category: 'entretenimento', color: '#ef233c', next: 8  },
+    { name: 'Spotify',            amount: 21.90, category: 'entretenimento', color: '#10b981', next: 15 },
+    { name: 'Academia',           amount: 89.90, category: 'saude',          color: '#f59e0b', next: 22 },
+  ],
+  inter: [
+    { name: 'Disney+',            amount: 33.90, category: 'entretenimento', color: '#0ea5e9', next: 10 },
+    { name: 'Deezer',             amount: 19.90, category: 'entretenimento', color: '#ec4899', next: 18 },
+    { name: 'Duolingo',           amount: 35.90, category: 'educacao',       color: '#10b981', next: 25 },
+  ],
+  itau: [
+    { name: 'HBO Max',            amount: 39.90, category: 'entretenimento', color: '#8b5cf6', next: 7  },
+    { name: 'Apple Music',        amount: 21.90, category: 'entretenimento', color: '#ef233c', next: 14 },
+    { name: 'Plano de Saúde',     amount: 320.00, category: 'saude',         color: '#10b981', next: 21 },
+  ],
+  bradesco: [
+    { name: 'Amazon Prime',       amount: 14.90, category: 'entretenimento', color: '#0ea5e9', next: 9  },
+    { name: 'Youtube Premium',    amount: 24.90, category: 'entretenimento', color: '#ef233c', next: 16 },
+    { name: 'Academia',           amount: 89.90, category: 'saude',          color: '#f59e0b', next: 22 },
+  ],
+  c6: [
+    { name: 'Crunchyroll',        amount: 24.90, category: 'entretenimento', color: '#f59e0b', next: 11 },
+    { name: 'Spotify',            amount: 21.90, category: 'entretenimento', color: '#10b981', next: 17 },
+    { name: 'iCloud',             amount: 14.90, category: 'produtividade',  color: '#71717a', next: 24 },
+  ],
+  picpay: [
+    { name: 'Netflix',            amount: 44.90, category: 'entretenimento', color: '#ef233c', next: 8  },
+    { name: 'Twitch Turbo',       amount: 17.90, category: 'entretenimento', color: '#8b5cf6', next: 13 },
+    { name: 'Canva Pro',          amount: 39.90, category: 'produtividade',  color: '#0ea5e9', next: 20 },
+  ],
+  santander: [
+    { name: 'HBO Max',            amount: 39.90, category: 'entretenimento', color: '#8b5cf6', next: 10 },
+    { name: 'Deezer',             amount: 19.90, category: 'entretenimento', color: '#ec4899', next: 18 },
+    { name: 'Seguro de Vida',     amount: 79.90, category: 'saude',          color: '#10b981', next: 26 },
+  ],
+  caixa: [
+    { name: 'Amazon Prime',       amount: 14.90, category: 'entretenimento', color: '#0ea5e9', next: 9  },
+    { name: 'Claro Música',       amount: 16.90, category: 'entretenimento', color: '#ef233c', next: 16 },
+    { name: 'Plano Odontológico', amount: 49.90, category: 'saude',          color: '#10b981', next: 23 },
+  ],
+};
+
 function buildSubscriptions(bank) {
-  return [
-    {
-      name:              'Netflix',
-      amount:            44.90,
-      billing_cycle:     'monthly',
-      category:          'entretenimento',
-      color:             '#ef233c',
-      next_billing_date: daysAhead(8),
-      bank_source:       bank.id,
-    },
-    {
-      name:              'Spotify',
-      amount:            21.90,
-      billing_cycle:     'monthly',
-      category:          'entretenimento',
-      color:             '#10b981',
-      next_billing_date: daysAhead(15),
-      bank_source:       bank.id,
-    },
-    {
-      name:              'Academia',
-      amount:            89.90,
-      billing_cycle:     'monthly',
-      category:          'saude',
-      color:             '#f59e0b',
-      next_billing_date: daysAhead(22),
-      bank_source:       bank.id,
-    },
-  ];
+  const items = SUBSCRIPTIONS_BY_BANK[bank.id] ?? SUBSCRIPTIONS_BY_BANK.nubank;
+  return items.map((s) => ({
+    name:              s.name,
+    amount:            s.amount,
+    billing_cycle:     'monthly',
+    category:          s.category,
+    color:             s.color,
+    next_billing_date: daysAhead(s.next),
+    bank_source:       bank.id,
+  }));
+}
+
+// ─── Dedup helpers ──────────────────────────────────────────────────────────
+// Quando o usuário conecta vários bancos, cada banco rodava o seed completo
+// e gerava cópias de "Salário", "Netflix", "iFood" do mesmo mês. Os helpers
+// abaixo consultam o que já existe antes do INSERT e filtram só o que é novo.
+
+// Transações: deduplica por (title, YYYY-MM). Cobre tanto duplicatas entre
+// bancos quanto duplicatas vs. transações criadas manualmente pelo usuário.
+async function filterNewTransactions(items) {
+  if (items.length === 0) return items;
+  const monthOf = (iso) => iso.slice(0, 7);
+  const candidateMonths = new Set(items.map((t) => monthOf(t.date)));
+  const earliest = [...candidateMonths].sort()[0] + '-01';
+
+  const { data: existing, error } = await supabase
+    .from('transactions')
+    .select('title, date')
+    .gte('date', earliest);
+
+  // Se a query falhar, deixa o INSERT seguir — pior cenário é o comportamento
+  // antigo (eventuais duplicatas). Não bloquear o seed por um SELECT instável.
+  if (error || !existing) return items;
+
+  const taken = new Set(existing.map((r) => `${r.title}::${monthOf(r.date)}`));
+  return items.filter((t) => !taken.has(`${t.title}::${monthOf(t.date)}`));
+}
+
+// Assinaturas e parcelamentos: deduplica por `name` (ambas as tabelas têm
+// nomes únicos por natureza — "Netflix" é "Netflix" venha de onde vier).
+async function filterNewByName(table, items) {
+  if (items.length === 0) return items;
+  const { data: existing, error } = await supabase.from(table).select('name');
+  if (error || !existing) return items;
+  const taken = new Set(existing.map((r) => r.name));
+  return items.filter((i) => !taken.has(i.name));
 }
 
 // ─── API pública ────────────────────────────────────────────────────────────
 /**
  * Insere dados de demonstração no Supabase para um banco recém-conectado.
+ * Antes de inserir, deduplica contra o que já existe — assim conectar
+ * múltiplos bancos não gera 8 "Salário", 8 "Netflix", 8 "iFood".
+ *
  * Cada tabela falha de forma isolada — uma quebra (ex.: tabela ainda sem
  * migration aplicada) não impede as outras de seguirem.
  */
 export async function seedBankData(bank) {
-  const [txRes, subRes, insRes] = await Promise.all([
-    supabase.from('transactions').insert(buildTransactions(bank)),
-    supabase.from('subscriptions').insert(buildSubscriptions(bank)),
-    supabase.from('installments').insert(buildInstallments(bank)),
+  const [txItems, subItems, insItems] = await Promise.all([
+    filterNewTransactions(buildTransactions(bank)),
+    filterNewByName('subscriptions', buildSubscriptions(bank)),
+    filterNewByName('installments',  buildInstallments(bank)),
   ]);
+
+  // INSERTs em paralelo. Quando uma lista filtrada fica vazia, evita a
+  // chamada e devolve um "sucesso vazio" pra manter o shape do retorno.
+  const noopOk = Promise.resolve({ error: null });
+  const [txRes, subRes, insRes] = await Promise.all([
+    txItems.length  ? supabase.from('transactions').insert(txItems)   : noopOk,
+    subItems.length ? supabase.from('subscriptions').insert(subItems) : noopOk,
+    insItems.length ? supabase.from('installments').insert(insItems)  : noopOk,
+  ]);
+
   return {
     transactions:  !txRes.error,
     subscriptions: !subRes.error,
     installments:  !insRes.error,
+    inserted: {
+      transactions:  txItems.length,
+      subscriptions: subItems.length,
+      installments:  insItems.length,
+    },
     errors: [txRes.error, subRes.error, insRes.error].filter(Boolean),
   };
 }
@@ -257,37 +346,34 @@ export async function backfillMissingLazer() {
   const today = new Date();
   const monthStart = isoDay(new Date(today.getFullYear(), today.getMonth(), 1));
 
-  // Quais bancos seedados o usuário tem? (DISTINCT em bank_source não-nulo
-  // do mês atual ou anterior — basta saber quais bancos têm seed presente.)
+  // Lista todas as transações do mês corrente vindas de seed (bank_source
+  // não-nulo) pra saber: quais bancos existem? algum já tem lazer este mês?
   const { data: existing, error: existErr } = await supabase
     .from('transactions')
     .select('bank_source, category, date')
-    .not('bank_source', 'is', null);
+    .not('bank_source', 'is', null)
+    .gte('date', monthStart);
 
   if (existErr || !existing) return 0;
 
-  // Agrupa por bank_source: precisa de lazer no mês atual? Já tem?
-  const bySource = new Map();
+  const bankIds = new Set();
+  let anyLazerThisMonth = false;
   for (const row of existing) {
-    const entry = bySource.get(row.bank_source) ?? { hasAnyLazerThisMonth: false };
-    if (row.category === 'lazer' && row.date >= monthStart) {
-      entry.hasAnyLazerThisMonth = true;
-    }
-    bySource.set(row.bank_source, entry);
+    bankIds.add(row.bank_source);
+    if (row.category === 'lazer') anyLazerThisMonth = true;
   }
 
-  const toInsert = [];
-  for (const [bankId, info] of bySource.entries()) {
-    if (info.hasAnyLazerThisMonth) continue;
-    // Insere o mesmo template de lazer recente que o seed novo usa.
-    // Usa perfil "digital" como padrão — valores leves e nomes neutros.
-    toInsert.push(
-      { title: 'Netflix', amount: jitter(44.90), category: 'lazer', type: 'expense', date: daysAgo(4), bank_source: bankId },
-      { title: 'Spotify', amount: jitter(21.90), category: 'lazer', type: 'expense', date: daysAgo(9), bank_source: bankId },
-    );
-  }
+  // Já existe lazer no mês ou não há banco seedado → nada a fazer.
+  if (anyLazerThisMonth || bankIds.size === 0) return 0;
 
-  if (toInsert.length === 0) return 0;
+  // Insere o lazer UMA única vez, atribuído ao primeiro banco encontrado.
+  // Antes a função inseria por banco — quando o usuário tinha 8 bancos sem
+  // lazer, virava 16 linhas (8 Netflix + 8 Spotify). Agora vira 2 linhas.
+  const firstBankId = [...bankIds][0];
+  const toInsert = [
+    { title: 'Netflix', amount: jitter(44.90), category: 'lazer', type: 'expense', date: daysAgo(4), bank_source: firstBankId },
+    { title: 'Spotify', amount: jitter(21.90), category: 'lazer', type: 'expense', date: daysAgo(9), bank_source: firstBankId },
+  ];
 
   const { error: insErr } = await supabase.from('transactions').insert(toInsert);
   return insErr ? 0 : toInsert.length;

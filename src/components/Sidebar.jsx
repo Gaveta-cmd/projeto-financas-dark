@@ -4,7 +4,7 @@ import {
   TrendingUp, LayoutDashboard, Target,
   Settings, User, Sliders,
   Lock, AlertTriangle, MessageCircle,
-  LogOut, ChevronLeft,
+  LogOut, ChevronLeft, FlaskConical,
 } from 'lucide-react';
 
 const MAIN_NAV = [
@@ -41,7 +41,7 @@ const panelVariants = {
   exit:    { opacity: 0, transition: { duration: 0.12 } },
 };
 
-export function Sidebar({ session, activeTab, onTabChange, onLogout }) {
+export function Sidebar({ session, activeTab, onTabChange, onLogout, isDemo }) {
   const [panel, setPanel] = useState('nav'); // 'nav' | 'settings'
 
   const user     = session?.user;
@@ -182,24 +182,32 @@ export function Sidebar({ session, activeTab, onTabChange, onLogout }) {
 
       {/* ── Rodapé: Configurações + Sair ── */}
       <div className="px-3 py-3 border-t border-gray-200 dark:border-dark-border shrink-0 flex flex-col gap-1">
-        <button
-          onClick={() => setPanel(p => (p === 'settings' ? 'nav' : 'settings'))}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-colors ${
-            panel === 'settings'
-              ? 'bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white'
-              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          Configurações
-        </button>
+        {isDemo && (
+          <div className="flex items-center gap-2 px-3 py-2 mb-1 rounded-xl bg-accent/5 border border-accent/20">
+            <FlaskConical className="w-3.5 h-3.5 text-accent shrink-0" />
+            <span className="text-xs text-gray-400">Modo demonstração</span>
+          </div>
+        )}
+        {!isDemo && (
+          <button
+            onClick={() => setPanel(p => (p === 'settings' ? 'nav' : 'settings'))}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-colors ${
+              panel === 'settings'
+                ? 'bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Configurações
+          </button>
+        )}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={onLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold w-full text-accent hover:bg-accent/10 transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          Sair
+          {isDemo ? 'Sair da demo' : 'Sair'}
         </motion.button>
       </div>
 

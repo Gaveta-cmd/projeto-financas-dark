@@ -6,6 +6,7 @@ import {
   Calendar, Tag, AlertCircle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useDemoMode } from '../contexts/DemoContext';
 
 // Catálogo completo (inclui 'metas' usado pelos aportes vindos da tela de Metas).
 const CATEGORIES = [
@@ -405,6 +406,8 @@ function TransactionRow({ tx, onDelete }) {
 
 // ─── Componente principal ───────────────────────────────────────────────────
 export function Transactions() {
+  const { isDemo, demoData, showDemoBlock } = useDemoMode();
+
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [loadError, setLoadError]       = useState('');
@@ -416,6 +419,19 @@ export function Transactions() {
     let cancelled = false;
     async function load() {
       setLoading(true);
+
+      if (isDemo) {
+        if (!cancelled) {
+          const sorted = [...demoData.transactions].sort((a, b) => {
+            if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+            return a.created_at < b.created_at ? 1 : -1;
+          });
+          setTransactions(sorted);
+          setLoading(false);
+        }
+        return;
+      }
+
       const { data, error } = await supabase
         .from('transactions')
         .select('id, title, amount, category, type, date, created_at')
@@ -433,7 +449,7 @@ export function Transactions() {
     }
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [isDemo]);
 
   const handleCreated = (tx) => {
     setTransactions((prev) => {
@@ -448,6 +464,7 @@ export function Transactions() {
 
   const handleDeleteConfirmed = async () => {
     if (!pendingDelete) return;
+    if (isDemo) { showDemoBlock(); setPendingDelete(null); return; }
     setDeleting(true);
     const { error } = await supabase
       .from('transactions')
@@ -488,7 +505,7 @@ export function Transactions() {
         </div>
         <motion.button
           whileTap={{ scale: 0.96 }}
-          onClick={() => setShowAdd(true)}
+          onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-accent/20"
         >
           <Plus className="w-4 h-4" />
@@ -551,7 +568,7 @@ export function Transactions() {
             Comece adicionando sua primeira receita ou despesa para acompanhar suas finanças.
           </p>
           <button
-            onClick={() => setShowAdd(true)}
+            onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
             className="mt-5 flex items-center gap-2 px-4 py-2 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -570,7 +587,7 @@ export function Transactions() {
               <TransactionRow
                 key={tx.id}
                 tx={tx}
-                onDelete={setPendingDelete}
+                onDelete={(t) => isDemo ? showDemoBlock() : setPendingDelete(t)}
               />
             ))}
           </AnimatePresence>

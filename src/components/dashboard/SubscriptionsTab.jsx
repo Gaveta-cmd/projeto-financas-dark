@@ -5,6 +5,7 @@ import {
   Tv, Heart, Briefcase, GraduationCap, MoreHorizontal, CheckCircle2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { useDemoMode } from '../../contexts/DemoContext';
 
 // Traduz erros comuns do Postgres/Supabase para algo acionável.
 function formatSupabaseError(err) {
@@ -458,13 +459,15 @@ function SubscriptionRow({ sub, onDelete }) {
 
 // ─── Componente principal ──────────────────────────────────────────────────
 export function SubscriptionsTab() {
+  const { isDemo, demoData, showDemoBlock } = useDemoMode();
+
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading]       = useState(true);
   const [loadError, setLoadError]   = useState('');
   const [showAdd, setShowAdd]       = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting]     = useState(false);
-  const [toast, setToast]           = useState(null); // { type: 'success'|'error', message }
+  const [toast, setToast]           = useState(null);
 
   function flashToast(type, message) {
     setToast({ type, message });
@@ -475,6 +478,18 @@ export function SubscriptionsTab() {
     let cancelled = false;
     async function load() {
       setLoading(true);
+
+      if (isDemo) {
+        if (!cancelled) {
+          const sorted = [...demoData.subscriptions].sort((a, b) =>
+            a.next_billing_date < b.next_billing_date ? -1 : 1
+          );
+          setSubscriptions(sorted);
+          setLoading(false);
+        }
+        return;
+      }
+
       const { data, error } = await supabase
         .from('subscriptions')
         .select('id, name, amount, billing_cycle, category, color, next_billing_date, created_at')
@@ -491,7 +506,7 @@ export function SubscriptionsTab() {
     }
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [isDemo]);
 
   const handleCreated = (sub) => {
     setSubscriptions((prev) => {
@@ -504,6 +519,7 @@ export function SubscriptionsTab() {
 
   const handleDeleteConfirmed = async () => {
     if (!pendingDelete) return;
+    if (isDemo) { showDemoBlock(); setPendingDelete(null); return; }
     setDeleting(true);
     const removed = pendingDelete;
     const { error } = await supabase
@@ -574,7 +590,7 @@ export function SubscriptionsTab() {
         </div>
         <motion.button
           whileTap={{ scale: 0.96 }}
-          onClick={() => setShowAdd(true)}
+          onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-accent/20"
         >
           <Plus className="w-4 h-4" />
@@ -639,7 +655,7 @@ export function SubscriptionsTab() {
             Adicione Netflix, Spotify, academia ou qualquer outro serviço recorrente para acompanhar seus gastos fixos.
           </p>
           <button
-            onClick={() => setShowAdd(true)}
+            onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
             className="mt-5 flex items-center gap-2 px-4 py-2 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />

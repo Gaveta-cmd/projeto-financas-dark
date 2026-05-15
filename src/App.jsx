@@ -12,6 +12,10 @@ import { Preferences } from './components/Preferences';
 import { ChangePassword } from './components/ChangePassword';
 import { ReportProblem } from './components/ReportProblem';
 import { SupportChat } from './components/SupportChat';
+import { DemoBanner } from './components/DemoBanner';
+import { DemoBlockModal } from './components/DemoBlockModal';
+import { useDemoMode } from './contexts/DemoContext';
+import { DEMO_DATA, DEMO_SESSION } from './data/demoData';
 
 const STORAGE_KEY  = 'vf_accounts';
 const THEME_KEY    = 'vf_theme';
@@ -32,6 +36,8 @@ const pageVariants = {
 };
 
 function App() {
+  const { isDemo, enterDemo, exitDemo, blockVisible, hideDemoBlock } = useDemoMode();
+
   const [session,   setSession]   = useState(undefined);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [accounts,  setAccounts]  = useState(loadAccounts);
@@ -50,7 +56,6 @@ function App() {
       applyDark(false);
       return;
     }
-    // auto: follow OS preference
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     applyDark(mq.matches);
     const handler = (e) => applyDark(e.matches);
@@ -78,7 +83,18 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Sync accounts when demo mode is toggled
+  useEffect(() => {
+    if (isDemo) {
+      setAccounts(DEMO_DATA.accounts);
+      setActiveTab('dashboard');
+    } else {
+      setAccounts(loadAccounts());
+    }
+  }, [isDemo]);
+
   const handleConnect = (account) => {
+    if (isDemo) return;
     setAccounts(prev => {
       const next = [...prev, account];
       saveAccounts(next);
@@ -87,18 +103,21 @@ function App() {
   };
 
   const handleDisconnect = (account) => {
-    // Tira o banco da UI imediatamente pra dar resposta rápida.
+    if (isDemo) return;
     setAccounts(prev => {
       const next = prev.filter(a => a.id !== account.id);
       saveAccounts(next);
       return next;
     });
-    // Limpa as transações/assinaturas/parcelamentos seedados pra esse banco.
-    // Best-effort: se falhar, o usuário pode apagar manualmente nas telas.
     clearBankData(account).catch(() => null);
   };
 
   const handleLogout = async () => {
+    if (isDemo) {
+      exitDemo();
+      setActiveTab('dashboard');
+      return;
+    }
     try {
       await supabase.auth.signOut({ scope: 'global' });
     } catch { /* garante logout mesmo com erro de rede */ }
@@ -108,7 +127,10 @@ function App() {
     setActiveTab('dashboard');
   };
 
-  if (session === undefined) {
+  // In demo mode, show app with fake session; otherwise use real session
+  const activeSession = isDemo ? DEMO_SESSION : session;
+
+  if (session === undefined && !isDemo) {
     return (
       <div className="min-h-screen bg-dark-bg flex items-center justify-center">
         <div className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
@@ -118,9 +140,9 @@ function App() {
 
   return (
     <AnimatePresence mode="wait">
-      {!session ? (
+      {!activeSession ? (
         <motion.div key="login" {...pageVariants}>
-          <Login onLogin={setSession} />
+          <Login onLogin={setSession} onEnterDemo={enterDemo} />
         </motion.div>
       ) : (
         <motion.div
@@ -139,19 +161,24 @@ function App() {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onLogout={handleLogout}
+            isDemo={isDemo}
           />
 
           {/* Desktop: sidebar fixa à esquerda */}
           <Sidebar
-            session={session}
+            session={activeSession}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onLogout={handleLogout}
             theme={theme}
+            isDemo={isDemo}
           />
 
           {/* Conteúdo — recuado pela sidebar no desktop */}
           <main className="relative z-10 lg:pl-64">
+            {/* Banner de modo demo (sticky no topo do conteúdo) */}
+            {isDemo && <DemoBanner onExitDemo={exitDemo} />}
+
             <AnimatePresence mode="wait">
               {activeTab === 'dashboard' && (
                 <motion.div key="dashboard" {...pageVariants}>
@@ -170,7 +197,7 @@ function App() {
               )}
               {activeTab === 'profile' && (
                 <motion.div key="profile" {...pageVariants}>
-                  <Profile session={session} onLogout={handleLogout} />
+                  <Profile session={activeSession} onLogout={handleLogout} />
                 </motion.div>
               )}
               {activeTab === 'preferences' && (
@@ -181,7 +208,7 @@ function App() {
               {activeTab === 'change-password' && (
                 <motion.div key="change-password" {...pageVariants}>
                   <ChangePassword
-                    session={session}
+                    session={activeSession}
                     onCancel={() => setActiveTab('dashboard')}
                   />
                 </motion.div>
@@ -198,6 +225,13 @@ function App() {
               )}
             </AnimatePresence>
           </main>
+
+          {/* Modal de bloqueio de escrita no modo demo */}
+          <DemoBlockModal
+            visible={blockVisible}
+            onClose={hideDemoBlock}
+            onCreateAccount={() => { hideDemoBlock(); exitDemo(); }}
+          />
         </motion.div>
       )}
     </AnimatePresence>

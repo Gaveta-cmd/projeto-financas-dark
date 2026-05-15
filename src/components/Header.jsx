@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Wallet, Bell, User, LogOut, LayoutDashboard, Target,
-  Settings, Sliders, Lock, AlertTriangle, MessageCircle, X,
+  Settings, Sliders, Lock, AlertTriangle, MessageCircle, X, FlaskConical,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,7 +35,7 @@ const SETTINGS_MENU = [
 
 const SETTINGS_IDS = SETTINGS_MENU.flatMap(s => s.items.map(i => i.id));
 
-export function Header({ activeTab = 'dashboard', onTabChange, onLogout }) {
+export function Header({ activeTab = 'dashboard', onTabChange, onLogout, isDemo }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const isSettingsActive = SETTINGS_IDS.includes(activeTab);
 
@@ -265,14 +265,20 @@ export function Header({ activeTab = 'dashboard', onTabChange, onLogout }) {
               </div>
 
               {/* Logout footer */}
-              <div className="px-3 py-3 border-t border-gray-200 dark:border-dark-border">
+              <div className="px-3 py-3 border-t border-gray-200 dark:border-dark-border flex flex-col gap-2">
+                {isDemo && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent/5 border border-accent/20">
+                    <FlaskConical className="w-3.5 h-3.5 text-accent shrink-0" />
+                    <span className="text-xs text-gray-500">Modo demonstração ativo</span>
+                  </div>
+                )}
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => { setSheetOpen(false); onLogout?.(); }}
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold text-accent hover:bg-accent/10 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
-                  Sair
+                  {isDemo ? 'Sair da demo' : 'Sair'}
                 </motion.button>
               </div>
             </motion.div>

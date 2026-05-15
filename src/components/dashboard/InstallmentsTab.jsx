@@ -5,6 +5,7 @@ import {
   CalendarClock, CheckCircle2, Clock, Check,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { useDemoMode } from '../../contexts/DemoContext';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function brl(n) {
@@ -415,6 +416,8 @@ function InstallmentRow({ inst, onDelete, onMarkPaid }) {
 
 // ─── Componente principal ──────────────────────────────────────────────────
 export function InstallmentsTab() {
+  const { isDemo, demoData, showDemoBlock } = useDemoMode();
+
   const [installments, setInstallments] = useState([]);
   const [loading, setLoading]       = useState(true);
   const [loadError, setLoadError]   = useState('');
@@ -426,6 +429,18 @@ export function InstallmentsTab() {
     let cancelled = false;
     async function load() {
       setLoading(true);
+
+      if (isDemo) {
+        if (!cancelled) {
+          const sorted = [...demoData.installments].sort((a, b) =>
+            a.start_date < b.start_date ? 1 : -1
+          );
+          setInstallments(sorted);
+          setLoading(false);
+        }
+        return;
+      }
+
       const { data, error } = await supabase
         .from('installments')
         .select('id, name, total_amount, installment_amount, total_installments, paid_installments, start_date, created_at')
@@ -442,7 +457,7 @@ export function InstallmentsTab() {
     }
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [isDemo]);
 
   const handleCreated = (inst) => {
     setInstallments((prev) => {
@@ -453,6 +468,7 @@ export function InstallmentsTab() {
   };
 
   const handleMarkPaid = async (inst) => {
+    if (isDemo) { showDemoBlock(); return; }
     if (!isActive(inst)) return;
     const newPaid = inst.paid_installments + 1;
     // Atualização otimista
@@ -473,6 +489,7 @@ export function InstallmentsTab() {
 
   const handleDeleteConfirmed = async () => {
     if (!pendingDelete) return;
+    if (isDemo) { showDemoBlock(); setPendingDelete(null); return; }
     setDeleting(true);
     const { error } = await supabase
       .from('installments')
@@ -527,7 +544,7 @@ export function InstallmentsTab() {
         </div>
         <motion.button
           whileTap={{ scale: 0.96 }}
-          onClick={() => setShowAdd(true)}
+          onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-accent/20"
         >
           <Plus className="w-4 h-4" />
@@ -605,7 +622,7 @@ export function InstallmentsTab() {
             Cadastre suas compras parceladas para acompanhar quanto falta pagar mês a mês.
           </p>
           <button
-            onClick={() => setShowAdd(true)}
+            onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
             className="mt-5 flex items-center gap-2 px-4 py-2 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />

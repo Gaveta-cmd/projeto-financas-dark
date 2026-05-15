@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import {
   Mail, Lock, User, Calendar,
-  ArrowRight, Loader2, AlertCircle, TrendingUp, Eye, EyeOff,
+  ArrowRight, Loader2, AlertCircle, TrendingUp, Eye, EyeOff, FlaskConical,
 } from 'lucide-react';
 
 const today = new Date().toISOString().split('T')[0];
@@ -18,7 +18,7 @@ function mapAuthError(msg = '') {
   return 'Ocorreu um erro. Tente novamente.';
 }
 
-export function Login({ onLogin }) {
+export function Login({ onLogin, onEnterDemo }) {
   const [mode,         setMode]         = useState('signin');
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
@@ -243,6 +243,19 @@ export function Login({ onLogin }) {
               }
             </motion.button>
           </form>
+
+          {/* Botão Demo */}
+          {onEnterDemo && (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={onEnterDemo}
+              className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dark-border text-gray-400 hover:text-white hover:border-white/20 text-sm font-medium transition-all"
+            >
+              <FlaskConical className="w-4 h-4" />
+              Explorar sem cadastro →
+            </motion.button>
+          )}
 
           {/* Alternar modo */}
           <p className="mt-6 text-center text-gray-500 text-sm">

@@ -11,6 +11,7 @@ import { Button } from '../Button';
 import { MonthlyExpensesChart } from '../MonthlyExpensesChart';
 import { supabase } from '../../lib/supabaseClient';
 import { backfillMissingLazer } from '../../lib/bankSeed';
+import { useDemoMode } from '../../contexts/DemoContext';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const CATEGORY_META = {
@@ -225,6 +226,8 @@ function TransactionRow({ tx }) {
 
 // ─── Main ──────────────────────────────────────────────────────────────────
 export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, onGoToBanks }) {
+  const { isDemo, demoData } = useDemoMode();
+
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState('');
   const [transactions, setTransactions]   = useState([]);
@@ -238,6 +241,19 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
     async function load() {
       setLoading(true);
       setError('');
+
+      // Modo demo: usa dados fictícios, sem chamadas ao Supabase
+      if (isDemo) {
+        if (!cancelled) {
+          setTransactions(demoData.transactions);
+          setSubscriptions(demoData.subscriptions);
+          setInstallments(demoData.installments);
+          setCardsBill(demoData.cards.reduce((s, c) => s + Number(c.used_amount ?? 0), 0));
+          setGoalsList(demoData.goals);
+          setLoading(false);
+        }
+        return;
+      }
 
       // Bancos seedados antes da v2 do seed ficaram sem "lazer" no mês atual.
       // Faz backfill ANTES das queries pra Regra 50/30/20 já ler dados completos.
@@ -288,9 +304,7 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
     }
     load();
     return () => { cancelled = true; };
-    // Recarrega quando o número de bancos conectados muda — assim o backfill
-    // de lazer roda em conexões novas e os dados refletem desconexões.
-  }, [accounts.length]);
+  }, [accounts.length, isDemo]);
 
   // Saldo dos bancos conectados (mock local — entra como base do saldo total
   // e como fallback de orçamento para a regra 50/30/20).

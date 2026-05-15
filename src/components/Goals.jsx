@@ -6,6 +6,7 @@ import {
   CheckCircle2, TrendingUp, Wallet, Trophy, Sparkles,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useDemoMode } from '../contexts/DemoContext';
 
 // Traduz erros comuns do Postgres/Supabase para algo acionável.
 function formatSupabaseError(err) {
@@ -822,6 +823,8 @@ function GoalCard({ goal, onAddDeposit, onDelete, onComplete, celebrating }) {
 
 // ─── Componente principal ──────────────────────────────────────────────────
 export function Goals() {
+  const { isDemo, demoData, showDemoBlock } = useDemoMode();
+
   const [goals, setGoals]               = useState([]);
   const [loading, setLoading]           = useState(true);
   const [loadError, setLoadError]       = useState('');
@@ -832,7 +835,7 @@ export function Goals() {
   const [deleting, setDeleting]         = useState(false);
   const [completing, setCompleting]     = useState(false);
   const [celebratingId, setCelebratingId] = useState(null);
-  const [toast, setToast]               = useState(null); // { type, message }
+  const [toast, setToast]               = useState(null);
 
   function flashToast(type, message) {
     setToast({ type, message });
@@ -843,6 +846,18 @@ export function Goals() {
     let cancelled = false;
     async function load() {
       setLoading(true);
+
+      if (isDemo) {
+        if (!cancelled) {
+          const sorted = [...demoData.goals].sort((a, b) =>
+            a.deadline < b.deadline ? -1 : 1
+          );
+          setGoals(sorted);
+          setLoading(false);
+        }
+        return;
+      }
+
       const { data, error } = await supabase
         .from('goals')
         .select('id, name, target_amount, current_amount, deadline, category, color, created_at')
@@ -859,7 +874,7 @@ export function Goals() {
     }
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [isDemo]);
 
   const handleCreated = (goal) => {
     setGoals((prev) => {
@@ -881,6 +896,7 @@ export function Goals() {
 
   const handleCompleteConfirmed = async () => {
     if (!pendingComplete) return;
+    if (isDemo) { showDemoBlock(); setPendingComplete(null); return; }
     const conquered = pendingComplete;
     setCompleting(true);
 
@@ -912,6 +928,7 @@ export function Goals() {
 
   const handleDeleteConfirmed = async () => {
     if (!pendingDelete) return;
+    if (isDemo) { showDemoBlock(); setPendingDelete(null); return; }
     setDeleting(true);
     const removed = pendingDelete;
     const { error } = await supabase
@@ -1000,7 +1017,7 @@ export function Goals() {
         </div>
         <motion.button
           whileTap={{ scale: 0.96 }}
-          onClick={() => setShowAdd(true)}
+          onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-accent/20"
         >
           <Plus className="w-4 h-4" />
@@ -1114,7 +1131,7 @@ export function Goals() {
             Defina seu primeiro objetivo financeiro — viagem, reserva de emergência, troca de carro, o que importa pra você.
           </p>
           <button
-            onClick={() => setShowAdd(true)}
+            onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
             className="mt-5 flex items-center gap-2 px-4 py-2 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -1133,9 +1150,9 @@ export function Goals() {
               <GoalCard
                 key={goal.id}
                 goal={goal}
-                onAddDeposit={setPendingDeposit}
-                onDelete={setPendingDelete}
-                onComplete={setPendingComplete}
+                onAddDeposit={(g) => isDemo ? showDemoBlock() : setPendingDeposit(g)}
+                onDelete={(g) => isDemo ? showDemoBlock() : setPendingDelete(g)}
+                onComplete={(g) => isDemo ? showDemoBlock() : setPendingComplete(g)}
                 celebrating={celebratingId === goal.id}
               />
             ))}

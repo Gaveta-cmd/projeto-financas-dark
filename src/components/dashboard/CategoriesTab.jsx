@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { useDemoMode } from '../../contexts/DemoContext';
 
 const CATEGORIES = [
   { key: 'alimentacao', label: 'Alimentação', icon: Utensils,       color: '#ef233c' },
@@ -88,7 +89,9 @@ function ChangeBadge({ change }) {
 }
 
 export function CategoriesTab() {
-  const [monthOffset, setMonthOffset] = useState(0); // 0 = mês atual; -1 = mês passado…
+  const { isDemo, demoData } = useDemoMode();
+
+  const [monthOffset, setMonthOffset] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
@@ -104,7 +107,20 @@ export function CategoriesTab() {
       setLoading(true);
       setError('');
 
-      // Busca o mês selecionado + o anterior em uma única query, particiona no client.
+      if (isDemo) {
+        if (!cancelled) {
+          // Filtra apenas despesas da janela de datas (como a query real faria)
+          const startStr = isoDay(previous.start);
+          const endStr   = isoDay(current.end);
+          const filtered = demoData.transactions.filter(
+            (t) => t.type === 'expense' && t.date >= startStr && t.date <= endStr
+          );
+          setTransactions(filtered);
+          setLoading(false);
+        }
+        return;
+      }
+
       const { data, error: err } = await supabase
         .from('transactions')
         .select('amount, category, type, date')
@@ -123,7 +139,7 @@ export function CategoriesTab() {
     }
     load();
     return () => { cancelled = true; };
-  }, [current.end, previous.start]);
+  }, [current.end, previous.start, isDemo]);
 
   const breakdown = useMemo(() => {
     const currStart = isoDay(current.start);

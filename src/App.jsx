@@ -14,6 +14,7 @@ import { ReportProblem } from './components/ReportProblem';
 import { SupportChat } from './components/SupportChat';
 import { DemoBanner } from './components/DemoBanner';
 import { DemoBlockModal } from './components/DemoBlockModal';
+import { ResetPassword } from './components/ResetPassword';
 import { useDemoMode } from './contexts/DemoContext';
 import { DEMO_DATA, DEMO_SESSION } from './data/demoData';
 
@@ -38,10 +39,11 @@ const pageVariants = {
 function App() {
   const { isDemo, enterDemo, exitDemo, blockVisible, hideDemoBlock } = useDemoMode();
 
-  const [session,   setSession]   = useState(undefined);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [accounts,  setAccounts]  = useState(loadAccounts);
-  const [theme,     setTheme]     = useState(() => localStorage.getItem(THEME_KEY) || 'dark');
+  const [session,            setSession]            = useState(undefined);
+  const [showResetPassword,  setShowResetPassword]  = useState(false);
+  const [activeTab,          setActiveTab]          = useState('dashboard');
+  const [accounts,           setAccounts]           = useState(loadAccounts);
+  const [theme,              setTheme]              = useState(() => localStorage.getItem(THEME_KEY) || 'dark');
 
   // Apply / remove the 'dark' class on <html> and track system changes for 'auto'
   useEffect(() => {
@@ -69,6 +71,13 @@ function App() {
   };
 
   useEffect(() => {
+    // Detect recovery token in URL (PKCE flow uses query param, implicit uses hash)
+    const params = new URLSearchParams(window.location.search);
+    const hash   = window.location.hash;
+    if (params.get('type') === 'recovery' || hash.includes('type=recovery')) {
+      setShowResetPassword(true);
+    }
+
     supabase.auth.getSession()
       .then(({ data, error }) => {
         if (error) { setSession(null); return; }
@@ -76,8 +85,13 @@ function App() {
       })
       .catch(() => setSession(null));
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      setSession(currentSession ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowResetPassword(true);
+        setSession(currentSession ?? null);
+      } else {
+        setSession(currentSession ?? null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -129,6 +143,17 @@ function App() {
 
   // In demo mode, show app with fake session; otherwise use real session
   const activeSession = isDemo ? DEMO_SESSION : session;
+
+  if (showResetPassword) {
+    return (
+      <ResetPassword onDone={() => {
+        setShowResetPassword(false);
+        setSession(null);
+        // Clear the recovery params from URL without reload
+        window.history.replaceState({}, '', window.location.pathname);
+      }} />
+    );
+  }
 
   if (session === undefined && !isDemo) {
     return (

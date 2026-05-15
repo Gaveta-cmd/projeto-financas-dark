@@ -119,6 +119,16 @@ export const DEMO_INSTALLMENTS = [
     start_date: inMonth(-2, 1),
     created_at: inMonth(-2, 1),
   },
+  {
+    id: 'di-05',
+    name: 'Smart TV Samsung 4K',
+    total_amount: 2400,
+    installment_amount: 400,
+    total_installments: 6,
+    paid_installments: 6,
+    start_date: inMonth(-6, 1),
+    created_at: inMonth(-6, 1),
+  },
 ];
 
 export const DEMO_SUBSCRIPTIONS = [

@@ -218,7 +218,7 @@ export function Profile({ session, onLogout }) {
     <div className="max-w-2xl mx-auto px-6 pt-28 lg:pt-10 pb-24 md:pb-10 space-y-8">
 
       <div>
-        <h1 className="font-heading font-bold text-2xl text-white">Perfil</h1>
+        <h1 className="font-heading font-bold text-2xl text-gray-900 dark:text-white">Perfil</h1>
         <p className="text-gray-500 text-sm mt-1">Gerencie suas informações pessoais e de contato.</p>
       </div>
 
@@ -227,7 +227,7 @@ export function Profile({ session, onLogout }) {
         <div className="space-y-5">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-accent" />
-            <h2 className="font-heading font-semibold text-white text-base">Informações Pessoais</h2>
+            <h2 className="font-heading font-semibold text-gray-900 dark:text-white text-base">Informações Pessoais</h2>
           </div>
 
           <div>
@@ -239,7 +239,7 @@ export function Profile({ session, onLogout }) {
               value={nome}
               onChange={e => setNome(e.target.value)}
               placeholder="Seu nome completo"
-              className="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
+              className="w-full bg-slate-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg px-4 py-2.5 text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
             />
           </div>
 
@@ -251,7 +251,7 @@ export function Profile({ session, onLogout }) {
               type="date"
               value={dataNascimento}
               onChange={e => setDataNascimento(e.target.value)}
-              className="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors [color-scheme:dark]"
+              className="w-full bg-slate-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors dark:[color-scheme:dark]"
             />
           </div>
 
@@ -290,7 +290,7 @@ export function Profile({ session, onLogout }) {
         <div className="space-y-5">
           <div className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-accent" />
-            <h2 className="font-heading font-semibold text-white text-base">Informações de Contato</h2>
+            <h2 className="font-heading font-semibold text-gray-900 dark:text-white text-base">Informações de Contato</h2>
           </div>
 
           <div>
@@ -302,9 +302,9 @@ export function Profile({ session, onLogout }) {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="seu@email.com"
-              className="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
+              className="w-full bg-slate-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg px-4 py-2.5 text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
             />
-            <p className="text-gray-600 text-xs mt-1.5">
+            <p className="text-gray-500 text-xs mt-1.5">
               Ao alterar, um link de confirmação será enviado para o novo endereço.
             </p>
           </div>
@@ -319,15 +319,15 @@ export function Profile({ session, onLogout }) {
                 <button
                   type="button"
                   onClick={() => setShowCountryMenu(v => !v)}
-                  className="group flex items-center gap-0 bg-dark-bg border border-dark-border rounded-lg overflow-hidden hover:border-accent/60 transition-colors h-full"
+                  className="group flex items-center gap-0 bg-slate-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg overflow-hidden hover:border-accent/60 transition-colors h-full"
                 >
                   {/* Bloco da bandeira */}
-                  <span className="flex items-center justify-center px-3 py-2.5 text-xl leading-none border-r border-dark-border group-hover:border-accent/30 transition-colors">
+                  <span className="flex items-center justify-center px-3 py-2.5 text-xl leading-none border-r border-gray-200 dark:border-dark-border group-hover:border-accent/30 transition-colors">
                     {country.flag}
                   </span>
                   {/* Código + chevron */}
                   <span className="flex items-center gap-1 px-2.5">
-                    <span className="text-white text-xs font-semibold tracking-wide">{country.code}</span>
+                    <span className="text-gray-900 dark:text-white text-xs font-semibold tracking-wide">{country.code}</span>
                     <ChevronDown className="w-3 h-3 text-gray-500 shrink-0" />
                   </span>
                 </button>
@@ -375,7 +375,7 @@ export function Profile({ session, onLogout }) {
                   value={whatsappLocal}
                   onChange={e => setWhatsappLocal(formatPhoneLocal(e.target.value, country.code))}
                   placeholder={country.code === '+55' ? '(61) 99830-1503' : 'Número local'}
-                  className="w-full bg-dark-bg border border-dark-border rounded-lg pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
+                  className="w-full bg-slate-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg pl-10 pr-4 py-2.5 text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
                 />
               </div>
             </div>
@@ -432,7 +432,7 @@ export function Profile({ session, onLogout }) {
 
           <div className="flex items-center justify-between gap-4 border border-accent/20 bg-accent/5 rounded-xl p-4">
             <div>
-              <p className="text-white text-sm font-semibold">Excluir Conta</p>
+              <p className="text-gray-900 dark:text-white text-sm font-semibold">Excluir Conta</p>
               <p className="text-gray-500 text-xs mt-0.5">
                 Remove permanentemente sua conta e todos os seus dados.
               </p>

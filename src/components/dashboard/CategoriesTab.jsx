@@ -25,17 +25,17 @@ const CATEGORIES = [
 
 const CATEGORY_BY_KEY = Object.fromEntries(CATEGORIES.map((c) => [c.key, c]));
 
-const SESSION_CONFETTI_KEY = 'vf_celebrated_installments';
+const CONFETTI_KEY = 'vf_celebrated_installments';
 
 function getCelebrated() {
-  try { return new Set(JSON.parse(sessionStorage.getItem(SESSION_CONFETTI_KEY) || '[]')); }
+  try { return new Set(JSON.parse(localStorage.getItem(CONFETTI_KEY) || '[]')); }
   catch { return new Set(); }
 }
 
 function markCelebrated(id) {
   const set = getCelebrated();
   set.add(String(id));
-  sessionStorage.setItem(SESSION_CONFETTI_KEY, JSON.stringify([...set]));
+  localStorage.setItem(CONFETTI_KEY, JSON.stringify([...set]));
 }
 
 function brl(n) {
@@ -186,7 +186,7 @@ export function CategoriesTab() {
         markCelebrated(first.id);
         setCelebration({ name: first.name });
         setTimeout(() => {
-          confetti({ particleCount: 130, spread: 80, origin: { y: 0.55 } });
+          try { confetti({ particleCount: 130, spread: 80, origin: { y: 0.55 } }); } catch { /* ignore */ }
         }, 350);
       }
 

@@ -188,19 +188,17 @@ export function Sidebar({ session, activeTab, onTabChange, onLogout, isDemo }) {
             <span className="text-xs text-gray-400">Modo demonstração</span>
           </div>
         )}
-        {!isDemo && (
-          <button
-            onClick={() => setPanel(p => (p === 'settings' ? 'nav' : 'settings'))}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-colors ${
-              panel === 'settings'
-                ? 'bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            Configurações
-          </button>
-        )}
+        <button
+          onClick={() => setPanel(p => (p === 'settings' ? 'nav' : 'settings'))}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-colors ${
+            panel === 'settings'
+              ? 'bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <Settings className="w-4 h-4" />
+          Configurações
+        </button>
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={onLogout}

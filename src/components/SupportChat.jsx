@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Send, Sparkles, AlertCircle } from 'lucide-react';
+import { MessageCircle, Send, Sparkles, AlertCircle, FlaskConical } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useDemoMode } from '../contexts/DemoContext';
 
 const SUGGESTIONS = [
   'Onde adiciono uma conta bancária?',
@@ -62,6 +63,7 @@ function TypingIndicator() {
 }
 
 export function SupportChat() {
+  const { isDemo } = useDemoMode();
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -139,6 +141,41 @@ export function SupportChat() {
       sendMessage(input);
     }
   };
+
+  if (isDemo) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-dark-bg px-4 pt-28 lg:pt-12 pb-24 md:pb-12">
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-2xl font-heading font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <MessageCircle className="w-6 h-6 text-accent" />
+              Falar com o Suporte
+            </h1>
+            <p className="text-gray-500 text-sm mt-1 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
+              Assistente de IA — tire suas dúvidas sobre o uso do site
+            </p>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-8 text-center"
+          >
+            <div className="w-14 h-14 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4">
+              <FlaskConical className="w-7 h-7 text-accent" />
+            </div>
+            <h2 className="font-heading font-bold text-gray-900 dark:text-white text-lg mb-2">
+              Disponível apenas para usuários cadastrados
+            </h2>
+            <p className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto">
+              O assistente de IA está disponível apenas para usuários com conta ativa. Crie sua conta grátis para acessar o suporte completo.
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-dark-bg px-4 pt-28 lg:pt-12 pb-24 md:pb-12">

@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useDemoMode } from '../contexts/DemoContext';
 
 export function ChangePassword({ session, onCancel }) {
+  const { isDemo, showDemoBlock } = useDemoMode();
   const [currentPassword,  setCurrentPassword]  = useState('');
   const [newPassword,      setNewPassword]      = useState('');
   const [confirmPassword,  setConfirmPassword]  = useState('');
@@ -17,6 +19,7 @@ export function ChangePassword({ session, onCancel }) {
   const isLongEnough = newPassword.length >= 8;
 
   const handleSubmit = async () => {
+    if (isDemo) { showDemoBlock(); return; }
     setStatus(null);
     setErrorMsg('');
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, RefreshCw, CheckCircle2, Link2 } from 'lucide-react';
 import { seedBankData } from '../lib/bankSeed';
+import { useDemoMode } from '../contexts/DemoContext';
 
 const BANKS = [
   { id: 'nubank',    name: 'Nubank',    abbr: 'Nu',  color: '#820AD1', type: 'Digital',     range: [800,  4500] },
@@ -40,8 +41,10 @@ export function ConnectedAccounts({
   title  = (<>Contas <span className="text-accent">Conectadas</span></>),
 }) {
   const [connecting, setConnecting] = useState(null);
+  const { isDemo, showDemoBlock } = useDemoMode();
 
   const handleConnect = async (bank) => {
+    if (isDemo) { showDemoBlock(); return; }
     setConnecting(bank.id);
     // Seed de demo data roda em paralelo com o delay visual de "Conectando…".
     // Se o seed falhar (ex.: sessão expirada), seguimos com a conexão local —
@@ -131,7 +134,7 @@ export function ConnectedAccounts({
                       </div>
                     </div>
                     <button
-                      onClick={() => onDisconnect(acc)}
+                      onClick={() => isDemo ? showDemoBlock() : onDisconnect(acc)}
                       className="text-gray-400 dark:text-gray-600 hover:text-accent transition-colors p-1 rounded-lg hover:bg-accent/10"
                     >
                       <X className="w-3.5 h-3.5" />

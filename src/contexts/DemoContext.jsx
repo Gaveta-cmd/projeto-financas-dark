@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from 'react';
+import { DEMO_DATA } from '../data/demoData';
 
 const DemoContext = createContext(null);
 
@@ -9,6 +10,7 @@ export function DemoProvider({ children }) {
   return (
     <DemoContext.Provider value={{
       isDemo,
+      demoData: DEMO_DATA,
       enterDemo:     () => setIsDemo(true),
       exitDemo:      () => setIsDemo(false),
       showDemoBlock: () => setBlockVisible(true),

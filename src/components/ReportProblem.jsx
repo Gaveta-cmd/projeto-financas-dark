@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, CheckCircle, Send } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useDemoMode } from '../contexts/DemoContext';
 
 const SUBJECTS = [
   'Erro no login',
@@ -14,6 +15,7 @@ const SUBJECTS = [
 ];
 
 export function ReportProblem() {
+  const { isDemo, showDemoBlock } = useDemoMode();
   const [subject,     setSubject]     = useState('');
   const [description, setDescription] = useState('');
   const [loading,     setLoading]     = useState(false);
@@ -21,6 +23,7 @@ export function ReportProblem() {
   const [errorMsg,    setErrorMsg]    = useState('');
 
   const handleSubmit = async () => {
+    if (isDemo) { showDemoBlock(); return; }
     setStatus(null);
     setErrorMsg('');
 

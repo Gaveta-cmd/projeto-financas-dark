@@ -7,6 +7,8 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { Card } from './Card';
 import { Button } from './Button';
+import { useDemoMode } from '../contexts/DemoContext';
+import { DEMO_USER } from '../data/demoData';
 
 const COUNTRIES = [
   { flag: '🇧🇷', name: 'Brasil',      code: '+55'  },
@@ -50,6 +52,7 @@ function parseStoredPhone(stored) {
 }
 
 export function Profile({ session, onLogout }) {
+  const { isDemo, showDemoBlock } = useDemoMode();
   const user = session?.user;
 
   // ── Informações Pessoais ──
@@ -74,9 +77,18 @@ export function Profile({ session, onLogout }) {
   const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
-  const [loading, setLoading] = useState(!!user?.id);
+  const [loading, setLoading] = useState(!isDemo && !!user?.id);
 
   useEffect(() => {
+    if (isDemo) {
+      setNome(DEMO_USER.name);
+      setEmail(DEMO_USER.email);
+      setOriginalEmail(DEMO_USER.email);
+      setDataNascimento('1998-05-10');
+      setLoading(false);
+      return;
+    }
+
     if (!user?.id) return;
 
     async function loadProfile() {
@@ -103,10 +115,11 @@ export function Profile({ session, onLogout }) {
     }
 
     loadProfile();
-  }, [user]);
+  }, [user, isDemo]);
 
   // Salva nome + data de nascimento
   const handleSave = async () => {
+    if (isDemo) { showDemoBlock(); return; }
     setSaving(true);
     setSaveStatus(null);
     setSaveMsg('');
@@ -132,6 +145,7 @@ export function Profile({ session, onLogout }) {
 
   // Salva whatsapp e, se o e-mail mudou, dispara confirmação
   const handleSaveContact = async () => {
+    if (isDemo) { showDemoBlock(); return; }
     setSavingContact(true);
     setContactStatus(null);
     setContactMsg('');
@@ -178,6 +192,7 @@ export function Profile({ session, onLogout }) {
   };
 
   const handleDeleteAccount = async () => {
+    if (isDemo) { showDemoBlock(); return; }
     setDeleting(true);
     setDeleteError('');
 

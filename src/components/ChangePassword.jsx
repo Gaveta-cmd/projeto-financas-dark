@@ -214,7 +214,7 @@ export function ChangePassword({ session, onCancel }) {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-200 dark:hover:bg-zinc-300 text-white dark:text-gray-900 text-sm font-semibold transition-colors disabled:opacity-60"
+              className="px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-60"
             >
               {loading ? 'Salvando…' : 'Trocar Senha'}
             </button>

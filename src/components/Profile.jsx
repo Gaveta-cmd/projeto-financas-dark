@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, Trash2, Save,
-  AlertTriangle, CheckCircle, Info, ChevronDown,
+  AlertTriangle, CheckCircle, Info, ChevronDown, Loader2,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Card } from './Card';
@@ -273,10 +273,15 @@ export function Profile({ session, onLogout }) {
             )}
           </AnimatePresence>
 
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="w-4 h-4" />
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-60"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Salvando…' : 'Salvar Alterações'}
-          </Button>
+          </motion.button>
         </div>
       </Card>
 
@@ -402,10 +407,15 @@ export function Profile({ session, onLogout }) {
             )}
           </AnimatePresence>
 
-          <Button onClick={handleSaveContact} disabled={savingContact}>
-            <Save className="w-4 h-4" />
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleSaveContact}
+            disabled={savingContact}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-60"
+          >
+            {savingContact ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {savingContact ? 'Salvando…' : 'Salvar Contato'}
-          </Button>
+          </motion.button>
         </div>
       </Card>
 

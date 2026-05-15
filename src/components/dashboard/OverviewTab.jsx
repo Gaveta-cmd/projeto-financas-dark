@@ -24,12 +24,6 @@ const CATEGORY_META = {
   metas:       { label: 'Metas',       icon: Target,         color: '#8b5cf6' },
 };
 
-// Regra 50/30/20 — segue a divisão clássica:
-//   50% Necessidades → moradia, alimentação, saúde, transporte
-//   30% Lazer        → categoria lazer
-//   20% Investimento → o restante da renda do mês (leftover = receita − despesas)
-const NEEDS_CATS = ['moradia', 'alimentacao', 'saude', 'transporte'];
-const WANTS_CATS = ['lazer'];
 
 const SHORT_MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
@@ -105,20 +99,6 @@ function ProgressBar({ value, color = 'bg-gray-900 dark:bg-white' }) {
   );
 }
 
-// ─── Linha da Regra 50/30/20 ───────────────────────────────────────────────
-function Rule50Row({ label, actual, budget, pct, barClass, valueClass }) {
-  return (
-    <div>
-      <div className="flex justify-between text-sm mb-2 gap-3">
-        <span className="text-gray-600 dark:text-gray-400 shrink-0">{label}</span>
-        <span className={`font-semibold tabular-nums text-right ${valueClass}`}>
-          R$ {brl(actual)} / R$ {brl(budget)}
-        </span>
-      </div>
-      <ProgressBar value={pct} color={barClass} />
-    </div>
-  );
-}
 
 // ─── Skeleton ──────────────────────────────────────────────────────────────
 function SkeletonBlock({ className = '', style }) {
@@ -333,8 +313,6 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
     let totalExpense = 0;
     let currIncome   = 0;
     let currExpense  = 0;
-    let needsSpent   = 0;
-    let wantsSpent   = 0;
     const currCategorySpend = {};
 
     for (const t of transactions) {
@@ -350,8 +328,6 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
         if (isCurrentMonth) {
           currExpense += amt;
           currCategorySpend[t.category] = (currCategorySpend[t.category] ?? 0) + amt;
-          if (NEEDS_CATS.includes(t.category)) needsSpent += amt;
-          else if (WANTS_CATS.includes(t.category)) wantsSpent += amt;
         }
         const key = monthKey(d);
         if (monthlyMap.has(key)) {
@@ -360,26 +336,8 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
       }
     }
 
-    // Saldo total = saldo dos bancos conectados + (receitas − despesas) das
-    // transações registradas. Permite o usuário ter saldo mesmo sem ainda
-    // ter cadastrado nenhuma transação.
     const saldo = bankBalance + totalIncome - totalExpense;
 
-    // Base do 50/30/20: ESTRITAMENTE a receita do mês atual (sem fallback
-    // de saldo bancário — antigamente isso gerava limites absurdos quando
-    // o usuário tinha saldo alto mas nenhuma receita registrada).
-    const base = currIncome;
-    const hasBase = base > 0;
-    const needsBudget   = base * 0.50;
-    const wantsBudget   = base * 0.30;
-    const savingsBudget = base * 0.20;
-    // "Restante" = receita do mês − despesas do mês (nunca negativo).
-    const savingsActual = Math.max(0, currIncome - currExpense);
-    const baseLabel = hasBase
-      ? `Base: receita do mês — R$ ${brl(base)}`
-      : 'Sem receitas registradas neste mês';
-
-    // Categoria com maior gasto do mês corrente (para o alerta).
     let topCategory = null;
     let topCategoryAmount = 0;
     for (const [cat, val] of Object.entries(currCategorySpend)) {
@@ -392,8 +350,7 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
     return {
       totalIncome, totalExpense, saldo,
       currIncome, currExpense,
-      needsSpent, wantsSpent,
-      needsBudget, wantsBudget, savingsBudget, savingsActual, baseLabel,
+      currCategorySpend,
       topCategory, topCategoryAmount,
       monthlyData: Array.from(monthlyMap.values()),
     };
@@ -413,6 +370,17 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
   }, [installments]);
 
   const recentTransactions = useMemo(() => transactions.slice(0, 5), [transactions]);
+
+  const currSpendItems = useMemo(() => {
+    const total = Object.values(stats.currCategorySpend).reduce((s, n) => s + n, 0);
+    return Object.entries(stats.currCategorySpend)
+      .filter(([, v]) => v > 0)
+      .sort(([, a], [, b]) => b - a)
+      .map(([key, amount]) => {
+        const meta = CATEGORY_META[key] ?? CATEGORY_META.outros;
+        return { key, ...meta, amount, percent: total > 0 ? (amount / total) * 100 : 0 };
+      });
+  }, [stats.currCategorySpend]);
 
   // Resumo de metas pra exibir no widget da Visão Geral.
   // Mostra as 3 mais urgentes (não concluídas primeiro, ordenadas por prazo).
@@ -461,20 +429,11 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
   const [balInt, balDec] = brl(Math.abs(stats.saldo)).split(',');
   const saldoNegativo = stats.saldo < 0;
 
-  // Alerta dinâmico: prioriza estouro de wants > needs > info da maior categoria.
   let alertTitle = 'Tudo sob controle';
-  let alertBody  = 'Você ainda tem espaço no orçamento deste mês.';
+  let alertBody  = 'Continue acompanhando suas finanças para manter o equilíbrio.';
   let alertTone  = 'info';
 
-  if (stats.wantsBudget > 0 && stats.wantsSpent / stats.wantsBudget > 0.8) {
-    alertTitle = 'Atenção com gastos supérfluos';
-    alertBody  = `Você já comprometeu ${((stats.wantsSpent / stats.wantsBudget) * 100).toFixed(0)}% do seu orçamento de Lazer/Outros este mês.`;
-    alertTone  = 'warn';
-  } else if (stats.needsBudget > 0 && stats.needsSpent / stats.needsBudget > 0.8) {
-    alertTitle = 'Gastos essenciais altos';
-    alertBody  = `Você já comprometeu ${((stats.needsSpent / stats.needsBudget) * 100).toFixed(0)}% do orçamento essencial este mês.`;
-    alertTone  = 'warn';
-  } else if (stats.topCategory) {
+  if (stats.topCategory) {
     const meta = CATEGORY_META[stats.topCategory] ?? CATEGORY_META.outros;
     alertTitle = 'Maior gasto do mês';
     alertBody  = `${meta.label} concentra R$ ${brl(stats.topCategoryAmount)} este mês.`;
@@ -511,10 +470,6 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
               Despesas: <span className="text-accent font-semibold">R$ {brl(stats.totalExpense)}</span>
             </span>
           </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="secondary">Enviar</Button>
-          <Button variant="primary" onClick={onGoToTransactions}>Adicionar</Button>
         </div>
       </motion.div>
 
@@ -609,61 +564,46 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
         <motion.div variants={itemVariants} className="flex flex-col gap-8">
 
           <Card withAccent={false}>
-            <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white mb-1">Regra 50/30/20</h3>
-            <p className="text-xs text-gray-500 mb-4">{stats.baseLabel}</p>
-            {(() => {
-              const hasBase = stats.needsBudget > 0;
-              const needsPct = hasBase ? (stats.needsSpent / stats.needsBudget) * 100 : 0;
-              const wantsPct = hasBase ? (stats.wantsSpent / stats.wantsBudget) * 100 : 0;
-              const savingsPct = hasBase ? (stats.savingsActual / stats.savingsBudget) * 100 : 0;
-              const needsOver = hasBase && stats.needsSpent > stats.needsBudget;
-              const wantsOver = hasBase && stats.wantsSpent > stats.wantsBudget;
-              const savingsHit = hasBase && stats.savingsActual >= stats.savingsBudget;
-
-              // Cores por linha:
-              //   Necessidades → indigo (ok) / accent (estourado)
-              //   Lazer        → amber  (ok) / accent (estourado)
-              //   Investimentos → emerald (meta batida) / accent (abaixo)
-              const neutralText = 'text-gray-500';
-              const badText     = 'text-accent';
-              const okTextNeeds = 'text-indigo-500';
-              const okTextWants = 'text-amber-500';
-              const okTextSave  = 'text-emerald-500';
-              const badBar      = 'bg-accent';
-              const okBarNeeds  = 'bg-indigo-500';
-              const okBarWants  = 'bg-amber-500';
-              const okBarSave   = 'bg-emerald-500';
-              const neutralBar  = 'bg-gray-400 dark:bg-gray-600';
-
-              return (
-                <div className="flex flex-col gap-5">
-                  <Rule50Row
-                    label="Necessidades (50%)"
-                    actual={stats.needsSpent}
-                    budget={stats.needsBudget}
-                    pct={needsPct}
-                    barClass={!hasBase ? neutralBar : needsOver ? badBar : okBarNeeds}
-                    valueClass={!hasBase ? neutralText : needsOver ? badText : okTextNeeds}
-                  />
-                  <Rule50Row
-                    label="Lazer (30%)"
-                    actual={stats.wantsSpent}
-                    budget={stats.wantsBudget}
-                    pct={wantsPct}
-                    barClass={!hasBase ? neutralBar : wantsOver ? badBar : okBarWants}
-                    valueClass={!hasBase ? neutralText : wantsOver ? badText : okTextWants}
-                  />
-                  <Rule50Row
-                    label="Investimentos (20%)"
-                    actual={stats.savingsActual}
-                    budget={stats.savingsBudget}
-                    pct={savingsPct}
-                    barClass={!hasBase ? neutralBar : savingsHit ? okBarSave : badBar}
-                    valueClass={!hasBase ? neutralText : savingsHit ? okTextSave : badText}
-                  />
-                </div>
-              );
-            })()}
+            <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white mb-1">
+              Distribuição dos seus gastos
+            </h3>
+            <p className="text-xs text-gray-500 mb-5">Mês atual · por categoria</p>
+            {currSpendItems.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Nenhum gasto registrado este mês.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {currSpendItems.map(({ key, label, icon: Icon, color, amount, percent }) => (
+                  <div key={key}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-6 h-6 rounded-md flex items-center justify-center"
+                          style={{ backgroundColor: `${color}20` }}
+                        >
+                          <Icon className="w-3.5 h-3.5" style={{ color }} />
+                        </div>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+                      </div>
+                      <span className="text-sm font-heading font-bold text-gray-900 dark:text-white">
+                        R$ {brl(amount)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: color }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${percent}%` }}
+                        transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1">{percent.toFixed(1)}% dos gastos</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           {/* Minhas Metas — preview real do goals */}

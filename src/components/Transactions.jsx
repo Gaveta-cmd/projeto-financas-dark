@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, ArrowUpRight, ArrowDownLeft, X,
   Utensils, Car, Gamepad2, Home, Heart, MoreHorizontal, Target,
-  Calendar, Tag, AlertCircle,
+  Calendar, Tag, AlertCircle, Download, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useDemoMode } from '../contexts/DemoContext';
+import { DEMO_USER } from '../data/demoData';
+import { getLastThreeMonths, exportMonthlyPDF } from '../lib/pdfExport';
 
 // Catálogo completo (inclui 'metas' usado pelos aportes vindos da tela de Metas).
 const CATEGORIES = [
@@ -408,12 +410,30 @@ function TransactionRow({ tx, onDelete }) {
 export function Transactions() {
   const { isDemo, demoData, showDemoBlock } = useDemoMode();
 
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [loadError, setLoadError]       = useState('');
-  const [showAdd, setShowAdd]           = useState(false);
+  const [transactions, setTransactions]   = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [loadError, setLoadError]         = useState('');
+  const [showAdd, setShowAdd]             = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
-  const [deleting, setDeleting]         = useState(false);
+  const [deleting, setDeleting]           = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  const months = getLastThreeMonths();
+
+  const handleExport = async (monthISO) => {
+    setShowExportMenu(false);
+    let userName = 'Usuário';
+    if (isDemo) {
+      userName = DEMO_USER.name;
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      userName = user?.user_metadata?.full_name
+        || user?.email?.split('@')[0]
+        || 'Usuário';
+    }
+    exportMonthlyPDF({ transactions, monthISO, userName });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -503,14 +523,61 @@ export function Transactions() {
             Suas <span className="text-accent">Transações</span>
           </h1>
         </div>
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-accent/20"
-        >
-          <Plus className="w-4 h-4" />
-          Nova transação
-        </motion.button>
+
+        <div className="flex items-center gap-2">
+          {/* Botão exportar PDF */}
+          <div className="relative" ref={exportMenuRef}>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setShowExportMenu(v => !v)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-accent/40 text-accent hover:bg-accent/10 text-sm font-semibold transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Exportar PDF
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showExportMenu ? 'rotate-180' : ''}`} />
+            </motion.button>
+
+            <AnimatePresence>
+              {showExportMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                    transition={{ duration: 0.13, ease: 'easeOut' }}
+                    className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl shadow-xl shadow-black/10 overflow-hidden min-w-[160px]"
+                  >
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-dark-border">
+                      <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Selecionar mês
+                      </p>
+                    </div>
+                    {months.map(({ iso, label }) => (
+                      <button
+                        key={iso}
+                        onClick={() => handleExport(iso)}
+                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-accent transition-colors text-left"
+                      >
+                        <Download className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        {label}
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => isDemo ? showDemoBlock() : setShowAdd(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors shadow-lg shadow-accent/20"
+          >
+            <Plus className="w-4 h-4" />
+            Nova transação
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* KPIs */}

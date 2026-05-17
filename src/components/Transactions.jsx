@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useDemoMode } from '../contexts/DemoContext';
 import { DEMO_USER } from '../data/demoData';
 import { getLastThreeMonths, exportMonthlyPDF } from '../lib/pdfExport';
+import { AnnualReportModal } from './AnnualReportModal';
 
 // Catálogo completo (inclui 'metas' usado pelos aportes vindos da tela de Metas).
 const CATEGORIES = [
@@ -417,22 +418,27 @@ export function Transactions() {
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting]           = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showAnnualModal, setShowAnnualModal] = useState(false);
+  const [pdfUserName, setPdfUserName] = useState('Usuário');
   const exportMenuRef = useRef(null);
 
   const months = getLastThreeMonths();
 
+  const resolveUserName = async () => {
+    if (isDemo) return DEMO_USER.name;
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário';
+  };
+
   const handleExport = async (monthISO) => {
     setShowExportMenu(false);
-    let userName = 'Usuário';
-    if (isDemo) {
-      userName = DEMO_USER.name;
-    } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      userName = user?.user_metadata?.full_name
-        || user?.email?.split('@')[0]
-        || 'Usuário';
-    }
-    exportMonthlyPDF({ transactions, monthISO, userName });
+    exportMonthlyPDF({ transactions, monthISO, userName: await resolveUserName() });
+  };
+
+  const handleOpenAnnualModal = async () => {
+    const name = await resolveUserName();
+    setPdfUserName(name);
+    setShowAnnualModal(true);
   };
 
   useEffect(() => {
@@ -525,6 +531,16 @@ export function Transactions() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Botão relatório anual */}
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={handleOpenAnnualModal}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-dark-border text-gray-600 dark:text-gray-300 hover:border-accent/40 hover:text-accent text-sm font-semibold transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Exportar Ano
+          </motion.button>
+
           {/* Botão exportar PDF */}
           <div className="relative" ref={exportMenuRef}>
             <motion.button
@@ -672,6 +688,12 @@ export function Transactions() {
         onCancel={() => setPendingDelete(null)}
         onConfirm={handleDeleteConfirmed}
         deleting={deleting}
+      />
+      <AnnualReportModal
+        open={showAnnualModal}
+        onClose={() => setShowAnnualModal(false)}
+        transactions={transactions}
+        userName={pdfUserName}
       />
     </div>
   );

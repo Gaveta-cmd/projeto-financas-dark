@@ -117,6 +117,7 @@ export function OnboardingModal({ onComplete, onSkip }) {
                   <input
                     type="number"
                     min="0"
+                    max="9999999"
                     step="0.01"
                     placeholder="R$ 0,00"
                     value={salary}

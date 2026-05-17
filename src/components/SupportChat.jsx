@@ -121,7 +121,7 @@ export function SupportChat() {
             'Não foi possível alcançar o serviço de IA. Verifique se a Edge Function "support-ai" está deployada (supabase functions deploy support-ai).';
         }
 
-        throw new Error(serverMsg || fnError.message || 'Falha na requisição.');
+        throw new Error(serverMsg || 'Falha ao conectar com o serviço de IA. Tente novamente.');
       }
 
       const reply = data?.reply;

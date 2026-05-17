@@ -37,7 +37,7 @@ export function useOnboarding(userId) {
     const { error } = await supabase
       .from('user_onboarding')
       .upsert(
-        { user_id: user.id, monthly_salary, financial_goal, preferred_categories },
+        { monthly_salary, financial_goal, preferred_categories },
         { onConflict: 'user_id' },
       );
     if (!error) {

@@ -1,0 +1,27 @@
+{
+  "name": "VibeFinance",
+  "short_name": "VibeFinance",
+  "description": "Seu painel financeiro pessoal — controle gastos, metas e reservas.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#ef233c",
+  "background_color": "#18181b",
+  "lang": "pt-BR",
+  "categories": ["finance"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

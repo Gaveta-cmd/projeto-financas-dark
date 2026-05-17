@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { validatePassword, passwordStrengthLabel } from '../utils/passwordStrength';
+
+const RESET_PWD_ERRORS = {
+  'Password should be at least 6 characters': 'A senha deve ter no mínimo 8 caracteres, com maiúscula, número e símbolo.',
+  'New password should be different from the old password': 'A nova senha deve ser diferente da anterior.',
+  'Auth session missing': 'Link de recuperação expirado. Solicite um novo.',
+};
 
 export function ResetPassword({ onDone }) {
   const [newPassword,     setNewPassword]     = useState('');
@@ -12,16 +19,17 @@ export function ResetPassword({ onDone }) {
   const [status,          setStatus]          = useState(null); // null | 'success' | 'error'
   const [errorMsg,        setErrorMsg]        = useState('');
 
-  const isLongEnough = newPassword.length >= 6;
+  const pwdStrength = newPassword.length > 0 ? passwordStrengthLabel(newPassword) : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus(null);
     setErrorMsg('');
 
-    if (!isLongEnough) {
+    const pwdErrors = validatePassword(newPassword);
+    if (pwdErrors.length > 0) {
       setStatus('error');
-      setErrorMsg('A nova senha precisa ter no mínimo 6 caracteres.');
+      setErrorMsg(`Senha inválida: ${pwdErrors.join(', ')}.`);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -36,7 +44,7 @@ export function ResetPassword({ onDone }) {
 
     if (error) {
       setStatus('error');
-      setErrorMsg(error.message);
+      setErrorMsg(RESET_PWD_ERRORS[error.message] ?? 'Erro ao redefinir senha. Tente novamente.');
       setLoading(false);
       return;
     }
@@ -44,7 +52,7 @@ export function ResetPassword({ onDone }) {
     setStatus('success');
     setLoading(false);
 
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'global' });
     setTimeout(() => onDone(), 3000);
   };
 
@@ -81,7 +89,7 @@ export function ResetPassword({ onDone }) {
             <p className="text-gray-500 text-sm mt-1">
               {status === 'success'
                 ? 'Redirecionando para o login em alguns segundos…'
-                : 'Escolha uma senha segura com pelo menos 6 caracteres.'}
+                : 'Escolha uma senha com maiúscula, número e símbolo.'}
             </p>
           </div>
 
@@ -132,11 +140,9 @@ export function ResetPassword({ onDone }) {
                     </button>
                   </div>
                   <p className={`text-xs mt-1.5 transition-colors ${
-                    newPassword.length === 0 ? 'text-gray-600'
-                    : isLongEnough ? 'text-emerald-500'
-                    : 'text-accent'
+                    pwdStrength ? pwdStrength.color : 'text-gray-600'
                   }`}>
-                    Ao menos 6 caracteres
+                    {pwdStrength ? `Força: ${pwdStrength.label}` : 'Maiúscula, número e símbolo obrigatórios'}
                   </p>
                 </div>
 

@@ -135,7 +135,7 @@ export function Profile({ session, onLogout }) {
     const err = authErr || profileErr;
     if (err) {
       setSaveStatus('error');
-      setSaveMsg(err.message);
+      setSaveMsg('Erro ao salvar. Verifique os dados e tente novamente.');
     } else {
       setSaveStatus('success');
       setTimeout(() => setSaveStatus(null), 3500);
@@ -166,7 +166,7 @@ export function Profile({ session, onLogout }) {
 
     if (whatsappErr) {
       setContactStatus('error');
-      setContactMsg(whatsappErr.message);
+      setContactMsg('Erro ao salvar número. Verifique e tente novamente.');
       setSavingContact(false);
       return;
     }
@@ -175,7 +175,7 @@ export function Profile({ session, onLogout }) {
       const { error: emailErr } = await supabase.auth.updateUser({ email: email.trim() });
       if (emailErr) {
         setContactStatus('error');
-        setContactMsg(emailErr.message);
+        setContactMsg('Erro ao atualizar e-mail. Verifique o endereço e tente novamente.');
         setSavingContact(false);
         return;
       }
@@ -268,7 +268,7 @@ export function Profile({ session, onLogout }) {
               <motion.div key="err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="text-accent text-xs p-3 bg-accent/10 rounded-lg"
               >
-                Erro ao salvar: {saveMsg}
+                {saveMsg}
               </motion.div>
             )}
           </AnimatePresence>
@@ -478,7 +478,7 @@ export function Profile({ session, onLogout }) {
 
               {deleteError && (
                 <p className="text-accent text-xs mb-4 p-3 bg-accent/10 rounded-lg break-words">
-                  {deleteError}
+                  Erro ao excluir conta. Tente novamente ou entre em contato com o suporte.
                 </p>
               )}
 

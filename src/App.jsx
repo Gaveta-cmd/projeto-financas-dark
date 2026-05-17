@@ -276,6 +276,16 @@ function App() {
             onClose={hideDemoBlock}
             onCreateAccount={() => { hideDemoBlock(); exitDemo(); }}
           />
+
+          {/* Questionário pós-cadastro */}
+          <AnimatePresence>
+            {showOnboarding && (
+              <OnboardingModal
+                onComplete={handleOnboardingComplete}
+                onSkip={() => setOnboardingDismissed(true)}
+              />
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>

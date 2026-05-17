@@ -138,6 +138,7 @@ function App() {
     setSession(null);
     setAccounts([]);
     localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem('vf_remember_email');
     setActiveTab('dashboard');
   };
 

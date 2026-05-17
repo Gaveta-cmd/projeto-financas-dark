@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useDemoMode } from '../contexts/DemoContext';
+import { validatePassword, passwordStrengthLabel } from '../utils/passwordStrength';
+
+const CHANGE_PWD_ERRORS = {
+  'Password should be at least 6 characters': 'A nova senha deve ter no mínimo 8 caracteres.',
+  'New password should be different from the old password': 'A nova senha deve ser diferente da atual.',
+  'Auth session missing': 'Sessão expirada. Faça login novamente.',
+};
 
 export function ChangePassword({ session, onCancel }) {
   const { isDemo, showDemoBlock } = useDemoMode();
@@ -17,6 +24,7 @@ export function ChangePassword({ session, onCancel }) {
   const [errorMsg,         setErrorMsg]         = useState('');
 
   const isLongEnough = newPassword.length >= 8;
+  const pwdStrength  = newPassword.length > 0 ? passwordStrengthLabel(newPassword) : null;
 
   const handleSubmit = async () => {
     if (isDemo) { showDemoBlock(); return; }
@@ -28,9 +36,10 @@ export function ChangePassword({ session, onCancel }) {
       setErrorMsg('Informe sua senha atual.');
       return;
     }
-    if (!isLongEnough) {
+    const pwdErrors = validatePassword(newPassword);
+    if (pwdErrors.length > 0) {
       setStatus('error');
-      setErrorMsg('A nova senha precisa ter no mínimo 8 caracteres.');
+      setErrorMsg(`Senha inválida: ${pwdErrors.join(', ')}.`);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -61,7 +70,7 @@ export function ChangePassword({ session, onCancel }) {
 
     if (updateError) {
       setStatus('error');
-      setErrorMsg(updateError.message);
+      setErrorMsg(CHANGE_PWD_ERRORS[updateError.message] ?? 'Erro ao atualizar senha. Tente novamente.');
     } else {
       setStatus('success');
       setCurrentPassword('');
@@ -142,13 +151,9 @@ export function ChangePassword({ session, onCancel }) {
               </button>
             </div>
             <p className={`text-xs mt-1.5 transition-colors ${
-              newPassword.length === 0
-                ? 'text-gray-400 dark:text-gray-500'
-                : isLongEnough
-                  ? 'text-emerald-500'
-                  : 'text-accent'
+              pwdStrength ? pwdStrength.color : 'text-gray-400 dark:text-gray-500'
             }`}>
-              Ao menos 8 caracteres
+              {pwdStrength ? `Força: ${pwdStrength.label}` : 'Maiúscula, número e símbolo obrigatórios'}
             </p>
           </div>
 

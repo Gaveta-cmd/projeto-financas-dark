@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
+import { validatePassword, passwordStrengthLabel } from '../utils/passwordStrength';
 import {
   Mail, Lock, User, Calendar, CheckSquare, Square,
   ArrowRight, Loader2, AlertCircle, TrendingUp, Eye, EyeOff, FlaskConical, ArrowLeft,
@@ -37,7 +38,7 @@ export function Login({ onLogin, onEnterDemo }) {
 
   // Carrega e-mail salvo ao montar
   useEffect(() => {
-    const saved = localStorage.getItem(REMEMBER_KEY);
+    const saved = sessionStorage.getItem(REMEMBER_KEY);
     if (saved) {
       setEmail(saved);
       setRememberMe(true);
@@ -49,9 +50,12 @@ export function Login({ onLogin, onEnterDemo }) {
     setError(null);
     setSuccess(null);
 
-    if (mode === 'signup' && password.length < 8) {
-      setError('A senha deve ter no mínimo 8 caracteres.');
-      return;
+    if (mode === 'signup') {
+      const pwdErrors = validatePassword(password);
+      if (pwdErrors.length > 0) {
+        setError(`Senha inválida: ${pwdErrors.join(', ')}.`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -60,8 +64,8 @@ export function Login({ onLogin, onEnterDemo }) {
       if (mode === 'signin') {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        if (rememberMe) localStorage.setItem(REMEMBER_KEY, email);
-        else localStorage.removeItem(REMEMBER_KEY);
+        if (rememberMe) sessionStorage.setItem(REMEMBER_KEY, email);
+        else sessionStorage.removeItem(REMEMBER_KEY);
         onLogin(data.session);
       } else {
         const { error } = await supabase.auth.signUp({
@@ -280,7 +284,6 @@ export function Login({ onLogin, onEnterDemo }) {
                   <input
                     type={showPassword ? 'text' : 'password'} placeholder="Senha" value={password}
                     onChange={e => setPassword(e.target.value)} required
-                    minLength={mode === 'signup' ? 8 : undefined}
                     autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                     className="w-full bg-dark-bg border border-dark-border rounded-xl pl-11 pr-12 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/30 transition-all"
                   />
@@ -290,6 +293,10 @@ export function Login({ onLogin, onEnterDemo }) {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {mode === 'signup' && password.length > 0 && (() => {
+                  const { label, color } = passwordStrengthLabel(password);
+                  return <p className={`text-xs -mt-1 ${color}`}>Força: {label}</p>;
+                })()}
 
                 {/* Lembrar de mim — apenas no signin */}
                 {mode === 'signin' && (

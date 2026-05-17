@@ -6,9 +6,6 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    // Sessão fica só na memória do browser (não persiste no localStorage).
-    // Efeito: o Login aparece sempre que a página é recarregada ou uma nova
-    // aba é aberta. Para manter o usuário logado entre recargas, mude para true.
-    persistSession: false,
+    persistSession: true,
   },
 });

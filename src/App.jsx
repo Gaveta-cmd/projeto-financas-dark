@@ -15,7 +15,9 @@ import { SupportChat } from './components/SupportChat';
 import { DemoBanner } from './components/DemoBanner';
 import { DemoBlockModal } from './components/DemoBlockModal';
 import { ResetPassword } from './components/ResetPassword';
+import { OnboardingModal } from './components/OnboardingModal';
 import { useDemoMode } from './contexts/DemoContext';
+import { useOnboarding } from './hooks/useOnboarding';
 import { DEMO_DATA, DEMO_SESSION } from './data/demoData';
 
 const STORAGE_KEY  = 'vf_accounts';
@@ -40,6 +42,7 @@ function App() {
   const { isDemo, enterDemo, exitDemo, blockVisible, hideDemoBlock } = useDemoMode();
 
   const [session,            setSession]            = useState(undefined);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [showResetPassword,  setShowResetPassword]  = useState(false);
   const [activeTab,          setActiveTab]          = useState('dashboard');
   const [accounts,           setAccounts]           = useState(loadAccounts);
@@ -144,6 +147,21 @@ function App() {
 
   // In demo mode, show app with fake session; otherwise use real session
   const activeSession = isDemo ? DEMO_SESSION : session;
+
+  const { completed: onboardingCompleted, loading: onboardingLoading, saveOnboarding } =
+    useOnboarding(activeSession?.user?.id);
+
+  // Reset dismissed state when a new user logs in
+  useEffect(() => {
+    if (session?.user?.id) setOnboardingDismissed(false);
+  }, [session?.user?.id]);
+
+  const showOnboarding =
+    Boolean(activeSession) && !isDemo && !onboardingLoading && !onboardingCompleted && !onboardingDismissed;
+
+  async function handleOnboardingComplete(data) {
+    await saveOnboarding(data);
+  }
 
   if (showResetPassword) {
     return (

@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Utensils, Car, Gamepad2, Home, Heart, MoreHorizontal,
   Target, AlertTriangle, AlertCircle, Plus, Repeat, CalendarClock, CreditCard,
-  ArrowUpRight, ArrowDownLeft, Landmark,
+  ArrowUpRight, ArrowDownLeft, Landmark, Shield,
 } from 'lucide-react';
 
 import { Card } from '../Card';
 import { Button } from '../Button';
 import { MonthlyExpensesChart } from '../MonthlyExpensesChart';
+import { EmergencyReserveModal } from '../EmergencyReserveModal';
 import { supabase } from '../../lib/supabaseClient';
 import { backfillMissingLazer } from '../../lib/bankSeed';
 import { useDemoMode } from '../../contexts/DemoContext';
+import { useEmergencyReserve } from '../../hooks/useEmergencyReserve';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const CATEGORY_META = {
@@ -207,6 +209,8 @@ function TransactionRow({ tx }) {
 // ─── Main ──────────────────────────────────────────────────────────────────
 export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, onGoToBanks }) {
   const { isDemo, demoData } = useDemoMode();
+  const reserve = useEmergencyReserve();
+  const [showReserveModal, setShowReserveModal] = useState(false);
 
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState('');
@@ -696,6 +700,73 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
             )}
           </Card>
 
+          {/* Reserva de Emergência */}
+          <Card className="bg-accent/[0.04] dark:bg-accent/[0.06] border-accent/20 dark:border-accent/20">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded bg-accent/10 flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-accent" />
+                </div>
+                <h3 className="text-lg font-heading font-bold text-gray-900 dark:text-white">
+                  Reserva de Emergência
+                </h3>
+              </div>
+              {reserve.exists && onGoToGoals && (
+                <button
+                  onClick={onGoToGoals}
+                  className="text-xs text-accent hover:text-accent/80 font-semibold transition-colors"
+                >
+                  Ver detalhes →
+                </button>
+              )}
+            </div>
+
+            {reserve.loading ? (
+              <SkeletonBlock className="h-16" />
+            ) : reserve.targetAmount === 0 ? (
+              <p className="text-sm text-gray-500 py-2">
+                Adicione despesas para calcular sua reserva ideal.
+              </p>
+            ) : (
+              <>
+                <p className="text-3xl font-heading font-extrabold text-emerald-500 tracking-tight">
+                  R$ {brl(reserve.targetAmount)}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5 mb-3">
+                  Gasto médio: R$ {brl(reserve.monthlyAverage)}/mês × 6
+                </p>
+
+                {reserve.exists && (
+                  <>
+                    <ProgressBar value={reserve.percentage} color="bg-emerald-500" />
+                    <div className="flex items-center justify-between text-xs mt-1.5">
+                      <span className="text-gray-500">
+                        R$ {brl(reserve.currentAmount)} guardados
+                      </span>
+                      {reserve.percentage >= 100 ? (
+                        <span className="text-emerald-500 font-semibold">Completa ✓</span>
+                      ) : (
+                        <span className="text-gray-500">
+                          {reserve.percentage.toFixed(0)}% concluída
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {!reserve.exists && !isDemo && (
+                  <button
+                    onClick={() => setShowReserveModal(true)}
+                    className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-red-600 text-white text-sm font-semibold transition-colors shadow-sm shadow-accent/20"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Criar Reserva
+                  </button>
+                )}
+              </>
+            )}
+          </Card>
+
           {/* Alerta dinâmico */}
           <Card className={`${
             alertTone === 'warn'
@@ -715,6 +786,16 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
 
         </motion.div>
       </motion.div>
+
+      <AnimatePresence>
+        {showReserveModal && (
+          <EmergencyReserveModal
+            targetAmount={reserve.targetAmount}
+            onClose={() => setShowReserveModal(false)}
+            onCreated={() => { reserve.refresh(); setShowReserveModal(false); }}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

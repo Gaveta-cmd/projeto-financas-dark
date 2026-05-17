@@ -10,6 +10,7 @@ import {
 import confetti from 'canvas-confetti';
 import { supabase } from '../../lib/supabaseClient';
 import { useDemoMode } from '../../contexts/DemoContext';
+import { useSpendingLimits } from '../../hooks/useSpendingLimits';
 
 const CATEGORIES = [
   { key: 'alimentacao',   label: 'Alimentação',   icon: Utensils,       color: '#ef233c' },
@@ -110,8 +111,27 @@ function ChangeBadge({ change }) {
   );
 }
 
+function LimitBar({ spent, limit }) {
+  const ratio = limit > 0 ? spent / limit : 0;
+  const barColor = ratio > 1 ? '#ef4444' : ratio > 0.8 ? '#f59e0b' : '#10b981';
+  return (
+    <div className="h-1.5 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
+      <motion.div
+        className="h-full rounded-full"
+        style={{ background: barColor }}
+        initial={{ width: 0 }}
+        animate={{ width: `${Math.min(ratio * 100, 100)}%` }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+      />
+    </div>
+  );
+}
+
 export function CategoriesTab() {
   const { isDemo, demoData } = useDemoMode();
+  const { limits, saveLimit, loading: loadingLimits } = useSpendingLimits();
+  const [limitInputs, setLimitInputs]   = useState({});
+  const [savingLimits, setSavingLimits] = useState({});
 
   const [monthOffset, setMonthOffset]   = useState(0);
   const [transactions, setTransactions] = useState([]);
@@ -256,6 +276,17 @@ export function CategoriesTab() {
 
   const monthLabel    = fmtMonth(current.start);
   const isCurrentMonth = monthOffset === 0;
+
+  async function handleSaveLimit(category) {
+    const raw = limitInputs[category] !== undefined
+      ? limitInputs[category]
+      : limits[category];
+    if (!raw || Number(raw) <= 0) return;
+    setSavingLimits((prev) => ({ ...prev, [category]: true }));
+    await saveLimit(category, raw);
+    setSavingLimits((prev) => ({ ...prev, [category]: false }));
+    setLimitInputs((prev) => { const n = { ...prev }; delete n[category]; return n; });
+  }
 
   return (
     <div className="space-y-6">
@@ -461,6 +492,57 @@ export function CategoriesTab() {
                                 </div>
                               );
                             })}
+                          </div>
+                        )}
+
+                        {/* Limite de gasto */}
+                        {!isDemo && !loadingLimits && (
+                          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-dark-border">
+                            {limits[row.key] > 0 && (
+                              <div className="mb-2.5">
+                                <LimitBar spent={row.value} limit={limits[row.key]} />
+                                <div className="flex items-center justify-between mt-1.5">
+                                  <span className="text-[11px] text-gray-500">
+                                    R$ {brl(row.value)} de R$ {brl(limits[row.key])}
+                                  </span>
+                                  {row.value > limits[row.key] && (
+                                    <span className="text-[11px] font-semibold text-red-500 flex items-center gap-1">
+                                      <AlertCircle className="w-3 h-3" />
+                                      Limite ultrapassado
+                                    </span>
+                                  )}
+                                  {row.value > limits[row.key] * 0.8 && row.value <= limits[row.key] && (
+                                    <span className="text-[11px] font-semibold text-amber-500">
+                                      {((row.value / limits[row.key]) * 100).toFixed(0)}% do limite
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="1"
+                                step="0.01"
+                                placeholder="Limite mensal (R$)"
+                                value={
+                                  limitInputs[row.key] !== undefined
+                                    ? limitInputs[row.key]
+                                    : limits[row.key] > 0 ? String(limits[row.key]) : ''
+                                }
+                                onChange={(e) =>
+                                  setLimitInputs((prev) => ({ ...prev, [row.key]: e.target.value }))
+                                }
+                                className="flex-1 text-xs px-3 py-1.5 bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg focus:outline-none focus:ring-1 focus:ring-accent/50 text-gray-900 dark:text-white placeholder:text-gray-400 min-w-0"
+                              />
+                              <button
+                                onClick={() => handleSaveLimit(row.key)}
+                                disabled={!!savingLimits[row.key]}
+                                className="shrink-0 text-xs px-3 py-1.5 bg-accent/10 hover:bg-accent/20 border border-accent/20 text-accent font-semibold rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
+                              >
+                                {savingLimits[row.key] ? '...' : 'Salvar limite'}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </motion.div>

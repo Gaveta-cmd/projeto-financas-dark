@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutGrid, ArrowLeftRight, CalendarClock,
@@ -12,6 +12,8 @@ import { InstallmentsTab } from './dashboard/InstallmentsTab';
 import { SubscriptionsTab } from './dashboard/SubscriptionsTab';
 import { CategoriesTab } from './dashboard/CategoriesTab';
 import { ConnectedAccounts } from './ConnectedAccounts';
+import { NotificationToast } from './NotificationToast';
+import { useUpcomingNotifications } from '../hooks/useUpcomingNotifications';
 
 const TABS = [
   { id: 'overview',      label: 'Visão Geral',    icon: LayoutGrid      },
@@ -30,10 +32,30 @@ const subTabVariants = {
 
 export function Dashboard({ accounts = [], onConnect, onDisconnect, onGoToGoals }) {
   const [subTab, setSubTab] = useState('overview');
+  const { notifications } = useUpcomingNotifications();
+  const [dismissedNotifications, setDismissedNotifications] = useState(new Set());
+
+  const visibleNotifications = useMemo(
+    () => notifications.filter((n) => !dismissedNotifications.has(n.id)),
+    [notifications, dismissedNotifications],
+  );
+
+  const handleDismissNotification = (notificationId) => {
+    setDismissedNotifications((prev) => new Set([...prev, notificationId]));
+  };
 
   return (
     <div className="pt-32 lg:pt-10 pb-20 lg:pb-10 px-6 max-w-7xl mx-auto">
-      <DashboardTabs tabs={TABS} activeId={subTab} onChange={setSubTab} />
+      <NotificationToast
+        notifications={visibleNotifications}
+        onDismiss={handleDismissNotification}
+      />
+      <DashboardTabs
+        tabs={TABS}
+        activeId={subTab}
+        onChange={setSubTab}
+        notificationCount={visibleNotifications.length}
+      />
 
       <AnimatePresence mode="wait">
         <motion.div

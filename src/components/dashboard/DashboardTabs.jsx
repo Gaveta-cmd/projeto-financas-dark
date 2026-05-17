@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 // Barra de sub-abas do Dashboard. Pills com aba ativa em accent,
 // scroll horizontal no mobile, animação de troca via layoutId.
-export function DashboardTabs({ tabs, activeId, onChange }) {
+export function DashboardTabs({ tabs, activeId, onChange, notificationCount = 0 }) {
   return (
     <div className="relative -mx-6 px-6 lg:mx-0 lg:px-0 mb-8">
       <div
@@ -12,6 +12,7 @@ export function DashboardTabs({ tabs, activeId, onChange }) {
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeId === tab.id;
+          const hasNotification = (tab.id === 'subscriptions' || tab.id === 'installments') && notificationCount > 0;
           return (
             <button
               key={tab.id}
@@ -29,8 +30,19 @@ export function DashboardTabs({ tabs, activeId, onChange }) {
                   transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                 />
               )}
-              {Icon && <Icon className="w-3.5 h-3.5 relative z-10 shrink-0" />}
-              <span className="relative z-10">{tab.label}</span>
+              <div className="relative z-10 flex items-center gap-2">
+                {Icon && <Icon className="w-3.5 h-3.5 shrink-0" />}
+                <span>{tab.label}</span>
+                {hasNotification && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent text-white text-xs font-bold"
+                  >
+                    {notificationCount}
+                  </motion.span>
+                )}
+              </div>
             </button>
           );
         })}

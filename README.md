@@ -8,9 +8,11 @@
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite)](https://vitejs.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?style=flat-square&logo=tailwindcss)](https://tailwindcss.com)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com)
+[![Framer Motion](https://img.shields.io/badge/Framer_Motion-12-0055FF?style=flat-square&logo=framer)](https://www.framer.com/motion)
+[![PWA](https://img.shields.io/badge/PWA-Offline--First-5A0FC8?style=flat-square&logo=pwa)](https://web.dev/progressive-web-apps)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat-square&logo=vercel)](https://vercel.com)
 
-🌐 **[Acesse ao vivo → projeto-financas-dark.vercel.app](https://projeto-financas-dark.vercel.app)**
+🌐 **[Acesse ao vivo → projeto-financas-dark-updated.vercel.app](https://projeto-financas-dark-updated.vercel.app)**
 
 </div>
 
@@ -18,7 +20,7 @@
 
 ## 📌 Sobre o Projeto
 
-O **VibeFinance** é um dashboard de finanças pessoais construído do zero, com foco em estética dark de alto nível, UX fluida e dados reais via Supabase. Conecte contas bancárias simuladas, acompanhe transações, parcelamentos, assinaturas, metas financeiras e muito mais — tudo com animações suaves e uma interface responsiva que funciona do mobile ao desktop.
+O **VibeFinance** é uma aplicação completa de finanças pessoais com Landing Page, dashboard e suporte a PWA offline-first. Construída do zero com foco em estética dark de alto nível, UX fluida e dados reais via Supabase. Conecte contas bancárias simuladas, acompanhe transações, parcelamentos, assinaturas, metas financeiras e muito mais — tudo com animações suaves e interface responsiva do mobile ao desktop.
 
 ---
 
@@ -44,12 +46,36 @@ O **VibeFinance** é um dashboard de finanças pessoais construído do zero, com
 
 ### ✅ Implementadas
 
+**Landing Page**
+- [x] Página de apresentação completa com 7 seções: Nav, Hero, Ticker, Features, Stats, CTA e Footer
+- [x] Navegação fixa com scroll suave entre seções e menu hamburger no mobile
+- [x] Hero com 3 phone mockups interativos animados (float + hover com glow e scale via Framer Motion)
+- [x] Ticker de marquee com destaques do produto em loop contínuo
+- [x] Grid de 6 feature cards com efeitos hover (beam, corner-accent, border-accent)
+- [x] Seção de stats com números em gradiente e tipografia Manrope 900
+- [x] CTA final com gradiente radial accent e badges de App Store / Google Play
+- [x] Fluxo de autenticação diferenciado: "Entrar" → login, "Começar Grátis" → cadastro
+- [x] Botão "Voltar ao início" na tela de login para retornar à landing page
+
+**PWA — Offline-First**
+- [x] `manifest.json` completo: nome, cores, ícones PNG 192×512, screenshot, shortcut
+- [x] Ícones PNG gerados em 192×192 e 512×512 (fundo #000000, accent #ef233c)
+- [x] Service worker com cache em duas camadas (static + runtime)
+- [x] Estratégia stale-while-revalidate para assets — responde do cache e atualiza em background
+- [x] Network-first para navegação com fallback offline para o shell em cache
+- [x] Cache-first para fontes do Google (estáveis, não precisam de rede)
+- [x] Supabase e APIs externas bypassados (sempre dados frescos)
+- [x] `browserconfig.xml` para tiles do Windows
+- [x] App instalável via browser no Android (Chrome) e iOS (Safari)
+
 **Autenticação**
 - [x] Login e cadastro via Supabase Auth (e-mail + senha)
 - [x] Checkbox "Lembrar de mim" na tela de login
 - [x] Fluxo completo de "Esqueceu a senha" com redefinição por e-mail (PKCE flow)
 - [x] **Modo Demonstração sem login** — explore todas as funcionalidades sem criar conta
 - [x] Banner de aviso no modo demo com botão de cadastro rápido
+- [x] Onboarding pós-cadastro: questionário em 3 etapas para personalizar o perfil financeiro
+- [x] Guard no Supabase client: app carrega mesmo sem variáveis de ambiente configuradas
 
 **Dashboard**
 - [x] 6 abas: Visão Geral, Transações, Parcelamentos, Assinaturas, Categorias e Bancos
@@ -57,6 +83,13 @@ O **VibeFinance** é um dashboard de finanças pessoais construído do zero, com
 - [x] Regra 50/30/20 com barras coloridas distintas (necessidades / desejos / investimentos)
 - [x] Cards de KPI: total em assinaturas/mês, parcelas ativas e saldo nos bancos conectados
 - [x] Gráfico de barras empilhadas de gastos mensais (6 meses)
+- [x] Card de reserva de emergência com cálculo automático baseado nos gastos reais
+- [x] Notificações in-app de vencimentos e limites de categoria
+
+**Limites de Gastos**
+- [x] Definição de limite mensal por categoria
+- [x] Alertas visuais ao aproximar e ultrapassar o limite definido
+- [x] Integração com o dashboard e a aba de categorias
 
 **Bancos & Seed de Dados**
 - [x] Integração simulada com 8 bancos brasileiros: Nubank, Inter, Itaú, Bradesco, C6, PicPay, Santander e Caixa
@@ -109,15 +142,51 @@ O **VibeFinance** é um dashboard de finanças pessoais construído do zero, com
 - [x] CI/CD automático: cada `git push` dispara deploy na Vercel
 - [x] Content Security Policy configurada via `vercel.json`
 
-### 🔧 Pendentes / Próximas Etapas
+### 🔧 Próximas Etapas
 
-- [ ] Landing page de apresentação do produto
 - [ ] Integração real com Open Finance (Pluggy / Belvo)
-- [ ] Notificações de vencimento de parcelas e assinaturas
-- [ ] Limites de gastos por categoria com alertas inteligentes
-- [ ] Questionário pós-cadastro para personalizar a experiência
+- [ ] Relatório anual em PDF (12 meses consolidados)
 - [ ] App mobile nativo (React Native / Expo)
-- [ ] Modo PWA (instalação via browser)
+
+---
+
+## 🌐 Landing Page
+
+A landing page serve como porta de entrada pública do produto, apresentando as funcionalidades, métricas e CTAs de conversão.
+
+| Seção | Descrição |
+|---|---|
+| **Nav** | Fixa com scroll detection, links com scroll suave, hamburger mobile |
+| **Hero** | Título + 3 phone mockups com float e hover interativo (Framer Motion) |
+| **Ticker** | Marquee 35s com destaques do produto em loop |
+| **Features** | Grid de 6 cards com efeitos hover (beam, corner-accent, border accent) |
+| **Stats** | 4 métricas com gradiente `from-accent to-gray-200` e font clamp |
+| **CTA** | Radial gradient accent, botão principal e badges de loja |
+| **Footer** | 4 colunas de links + copyright dinâmico |
+
+---
+
+## 📱 PWA — Progressive Web App
+
+O VibeFinance pode ser instalado como app nativo em qualquer dispositivo.
+
+**Como instalar:**
+- **Android (Chrome):** abra o site → banner "Adicionar à tela inicial" ou menu (⋮) → Instalar app
+- **iPhone (Safari):** abra o site → botão compartilhar → "Adicionar à Tela de Início"
+
+**Estratégias de cache do Service Worker:**
+
+| Tipo de requisição | Estratégia |
+|---|---|
+| Navegação (HTML) | Network-first → fallback offline |
+| Assets (JS/CSS/img) | Stale-while-revalidate |
+| Google Fonts | Cache-first |
+| Supabase / APIs externas | Bypass (sempre online) |
+
+**Regenerar ícones:**
+```bash
+node scripts/generate-icons.mjs
+```
 
 ---
 
@@ -130,7 +199,7 @@ Ao entrar no modo demo:
 - Todas as telas ficam disponíveis para exploração
 - Ações de escrita (adicionar, excluir, editar) exibem um modal convidando o usuário a criar uma conta real
 - Um banner fixo indica que o modo demo está ativo
-- Sair do demo retorna para a tela de login sem deixar rastros
+- Sair do demo retorna para a landing page sem deixar rastros
 
 ---
 
@@ -146,8 +215,7 @@ Todas as tabelas possuem **Row Level Security (RLS)** ativa — cada usuário ac
 | `goals` | id, user_id, name, target_amount, current_amount, deadline, color, category | ✅ |
 | `profiles` | id, full_name, birth_date, whatsapp | ✅ |
 | `support_tickets` | id, user_id, category, description, created_at | ✅ |
-
-> **Campo `bank_source`**: presente em `transactions`, `installments` e `subscriptions`. Armazena o `id` do banco que gerou os dados de seed, permitindo limpeza precisa ao desconectar.
+| `user_onboarding` | id, user_id, monthly_salary, financial_goal, preferred_categories, completed_at | ✅ |
 
 ---
 
@@ -155,22 +223,23 @@ Todas as tabelas possuem **Row Level Security (RLS)** ativa — cada usuário ac
 
 | Token | Valor |
 |---|---|
-| Background | `#0f0f0f` — Deep Black |
+| Background | `#000000` — Pure Black |
 | Surface | `#18181b` — Zinc 900 |
-| Borda | `rgba(255,255,255,0.08)` |
+| Borda | `#27272a` — Zinc 800 |
 | Accent | `#ef233c` — Electric Red |
 | Texto primário | `#ffffff` (dark) / `#111827` (light) |
-| Texto secundário | `#71717a` — Zinc 500 |
+| Texto secundário | `gray-200` / `#71717a` |
 | Fonte de títulos | **Manrope** (Google Fonts) |
 | Fonte de corpo | **Inter** (Google Fonts) |
-| Animações | `fadeSlideIn`, `columnReveal`, `hover-beam`, `border-spin-gradient` |
+| Efeitos | `border-spin-gradient`, `hover-shimmer`, `hover-beam`, `corner-accent`, `btn-connect`, `dashed-container` |
+| Animações | `fade-in-slide`, `column-reveal`, `float`, `marquee` |
 | Temas | Dark / Light / Automático (`prefers-color-scheme`) |
 
 ---
 
 ## 💻 Como Rodar Localmente
 
-**Pré-requisitos:** Node.js 18+ e uma conta no [Supabase](https://supabase.com)
+**Pré-requisitos:** Node.js 18+
 
 ```bash
 # 1. Clone o repositório
@@ -180,7 +249,7 @@ cd projeto-financas-dark
 # 2. Instale as dependências
 npm install
 
-# 3. Configure as variáveis de ambiente
+# 3. Configure as variáveis de ambiente (opcional — sem elas só o modo demo funciona)
 # Crie um arquivo .env na raiz com:
 VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
 VITE_SUPABASE_ANON_KEY=sua_chave_anon
@@ -189,7 +258,7 @@ VITE_SUPABASE_ANON_KEY=sua_chave_anon
 npm run dev
 ```
 
-> 💡 **Dica:** Prefere explorar sem configurar nada? Clique em **"Entrar no modo demo"** na tela de login.
+> 💡 **Dica:** Prefere explorar sem configurar nada? A landing page carrega normalmente e o botão **"Explorar sem cadastro"** dá acesso ao modo demo completo.
 
 ### Scripts disponíveis
 
@@ -198,6 +267,7 @@ npm run dev      # Servidor de desenvolvimento (http://localhost:5173)
 npm run build    # Build de produção
 npm run preview  # Preview do build local
 npm run lint     # Lint com ESLint
+node scripts/generate-icons.mjs  # Regera ícones PWA em PNG
 ```
 
 ---
@@ -207,6 +277,14 @@ npm run lint     # Lint com ESLint
 ```
 src/
 ├── components/
+│   ├── landing/
+│   │   ├── LandingNav.jsx        # Navegação fixa com scroll suave
+│   │   ├── LandingHero.jsx       # Hero com phone mockups animados
+│   │   ├── LandingTicker.jsx     # Marquee de destaques do produto
+│   │   ├── LandingFeatures.jsx   # Grid de 6 feature cards
+│   │   ├── LandingStats.jsx      # Métricas com gradient text
+│   │   ├── LandingCTA.jsx        # CTA final com badges de loja
+│   │   └── LandingFooter.jsx     # Footer com 4 colunas
 │   ├── dashboard/
 │   │   ├── OverviewTab.jsx       # Visão geral com KPIs e regra 50/30/20
 │   │   ├── CategoriesTab.jsx     # Gráfico de pizza por categoria
@@ -216,20 +294,32 @@ src/
 │   ├── ConnectedAccounts.jsx     # Integração com 8 bancos brasileiros
 │   ├── Transactions.jsx          # Listagem, cadastro e exportação PDF
 │   ├── Goals.jsx                 # Metas financeiras com fluxo de conquista
+│   ├── OnboardingModal.jsx       # Questionário pós-cadastro em 3 etapas
+│   ├── EmergencyReserveModal.jsx # Cálculo de reserva de emergência
 │   ├── SupportChat.jsx           # Chat com IA via Edge Function
+│   ├── Login.jsx                 # Auth com modo signin/signup/forgot
 │   ├── Profile.jsx               # Perfil e edição de dados
 │   ├── Preferences.jsx           # Tema e preferências
 │   ├── DemoBanner.jsx            # Banner do modo demonstração
-│   └── DemoBlockModal.jsx        # Modal de bloqueio de ações no demo
+│   └── DemoBlockModal.jsx        # Modal de bloqueio no demo
+├── pages/
+│   └── LandingPage.jsx           # Assembler da landing page
 ├── contexts/
 │   └── DemoContext.jsx           # Gerenciamento global do modo demo
+├── hooks/
+│   ├── useOnboarding.js          # Questionário pós-cadastro
+│   ├── useEmergencyReserve.js    # Cálculo de reserva de emergência
+│   ├── useSpendingLimits.js      # Limites de gastos por categoria
+│   └── useUpcomingNotifications.js # Notificações de vencimentos
 ├── data/
-│   └── demoData.js               # Dados fictícios pré-carregados para o demo
+│   └── demoData.js               # Dados fictícios para o modo demo
 ├── lib/
-│   ├── bankSeed.js               # Seed e limpeza de dados por banco conectado
-│   ├── pdfExport.js              # Geração de relatório PDF mensal (jsPDF)
-│   ├── supabaseClient.js         # Instância configurada do cliente Supabase
-│   └── utils.js                  # Funções utilitárias
+│   ├── bankSeed.js               # Seed e limpeza de dados por banco
+│   ├── pdfExport.js              # Geração de relatório PDF (jsPDF)
+│   ├── supabaseClient.js         # Cliente Supabase com guard de env vars
+│   └── utils.js                  # Funções utilitárias (cn)
+├── scripts/
+│   └── generate-icons.mjs        # Geração de ícones PWA em PNG via sharp
 └── App.jsx                       # Roteamento principal e estado global
 ```
 

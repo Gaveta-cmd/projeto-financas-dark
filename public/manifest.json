@@ -1,27 +1,57 @@
 {
-  "name": "VibeFinance",
+  "name": "VibeFinance - Seu Dinheiro Inteligente",
   "short_name": "VibeFinance",
-  "description": "Seu painel financeiro pessoal — controle gastos, metas e reservas.",
+  "description": "Controle de gastos por categoria, relatórios PDF e reserva de emergência",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#ef233c",
-  "background_color": "#18181b",
+  "background_color": "#000000",
   "lang": "pt-BR",
-  "categories": ["finance"],
+  "categories": ["finance", "productivity"],
   "icons": [
     {
-      "src": "/icons/icon.svg",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon.svg",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-540x720.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "VibeFinance - Painel Financeiro"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Abrir painel financeiro",
+      "url": "/",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

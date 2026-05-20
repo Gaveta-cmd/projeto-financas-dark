@@ -19,6 +19,7 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { useDemoMode } from './contexts/DemoContext';
 import { useOnboarding } from './hooks/useOnboarding';
 import { DEMO_DATA, DEMO_SESSION } from './data/demoData';
+import { LandingPage } from './pages/LandingPage';
 
 const STORAGE_KEY  = 'vf_accounts';
 const THEME_KEY    = 'vf_theme';
@@ -44,6 +45,8 @@ function App() {
   const [session,            setSession]            = useState(undefined);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [showResetPassword,  setShowResetPassword]  = useState(false);
+  const [showLanding,        setShowLanding]        = useState(true);
+  const [loginMode,          setLoginMode]          = useState('signin');
   const [activeTab,          setActiveTab]          = useState('dashboard');
   const [accounts,           setAccounts]           = useState(loadAccounts);
   const [theme,              setTheme]              = useState(() => localStorage.getItem(THEME_KEY) || 'dark');
@@ -79,6 +82,11 @@ function App() {
     const hash   = window.location.hash;
     if (params.get('type') === 'recovery' || hash.includes('type=recovery')) {
       setShowResetPassword(true);
+    }
+
+    if (!supabase) {
+      setSession(null);
+      return;
     }
 
     supabase.auth.getSession()
@@ -136,7 +144,7 @@ function App() {
       return;
     }
     try {
-      await supabase.auth.signOut({ scope: 'global' });
+      if (supabase) await supabase.auth.signOut({ scope: 'global' });
     } catch { /* garante logout mesmo com erro de rede */ }
     setSession(null);
     setAccounts([]);
@@ -184,9 +192,17 @@ function App() {
 
   return (
     <AnimatePresence mode="wait">
-      {!activeSession ? (
+      {!activeSession && showLanding ? (
+        <motion.div key="landing" {...pageVariants}>
+          <LandingPage
+            onLogin={() => { setLoginMode('signin'); setShowLanding(false); }}
+            onGetStarted={() => { setLoginMode('signup'); setShowLanding(false); }}
+            onDemo={enterDemo}
+          />
+        </motion.div>
+      ) : !activeSession ? (
         <motion.div key="login" {...pageVariants}>
-          <Login onLogin={setSession} onEnterDemo={enterDemo} />
+          <Login onLogin={setSession} onEnterDemo={enterDemo} initialMode={loginMode} onBack={() => setShowLanding(true)} />
         </motion.div>
       ) : (
         <motion.div

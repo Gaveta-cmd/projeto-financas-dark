@@ -20,8 +20,8 @@ function mapAuthError(msg = '') {
   return 'Ocorreu um erro. Tente novamente.';
 }
 
-export function Login({ onLogin, onEnterDemo }) {
-  const [mode,         setMode]         = useState('signin');
+export function Login({ onLogin, onEnterDemo, initialMode = 'signin', onBack }) {
+  const [mode,         setMode]         = useState(initialMode);
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
   const [fullName,     setFullName]     = useState('');
@@ -124,6 +124,20 @@ export function Login({ onLogin, onEnterDemo }) {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 w-full max-w-md mx-4"
       >
+        {/* Voltar para landing */}
+        {onBack && (
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-gray-500 hover:text-gray-200 text-sm transition-colors mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar ao início
+          </motion.button>
+        )}
+
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

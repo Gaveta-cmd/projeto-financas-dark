@@ -15,6 +15,7 @@ export function useOnboarding(userId) {
     }
     let cancelled = false;
     async function check() {
+      if (!supabase) { setLoading(false); return; }
       setLoading(true);
       const { data: row } = await supabase
         .from('user_onboarding')
@@ -31,6 +32,7 @@ export function useOnboarding(userId) {
   }, [userId]);
 
   const saveOnboarding = useCallback(async ({ monthly_salary, financial_goal, preferred_categories }) => {
+    if (!supabase) return false;
     const { data: authData } = await supabase.auth.getUser();
     const user = authData?.user;
     if (!user) return false;

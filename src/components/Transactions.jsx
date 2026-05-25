@@ -694,6 +694,8 @@ export function Transactions() {
         onClose={() => setShowAnnualModal(false)}
         transactions={transactions}
         userName={pdfUserName}
+        isDemo={isDemo}
+        demoData={demoData}
       />
     </div>
   );

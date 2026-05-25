@@ -618,22 +618,19 @@ export function exportAnnualReport({
 
   const top10 = [...filtered].sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 10);
 
-  // Quarterly groups (up to 4, each up to 3 months)
+  // Quarterly groups — must use `monthly` (has .txs, .income, .expense), NOT `months`
+  const ROMAN = ['I', 'II', 'III', 'IV'];
   const quarterGroups = [[], [], [], []];
-  months.forEach((m, i) => { quarterGroups[Math.min(Math.floor(i / 3), 3)].push(m); });
+  monthly.forEach((m, i) => { quarterGroups[Math.min(Math.floor(i / 3), 3)].push(m); });
   const quarters = quarterGroups
     .map((qMs, qi) => ({
-      label: `Trimestre ${'IIIIIIVIV'.slice(qi * 2, qi * 2 + (qi === 3 ? 2 : qi === 2 ? 2 : qi === 1 ? 2 : 1))}`,
+      label:   `Trimestre ${ROMAN[qi]}`,
       txs:     qMs.flatMap((m) => m.txs),
       income:  qMs.reduce((s, m) => s + m.income, 0),
       expense: qMs.reduce((s, m) => s + m.expense, 0),
       months:  qMs,
     }))
     .filter((q) => q.months.length > 0);
-
-  // Fix quarter roman numeral labels
-  const ROMAN = ['I', 'II', 'III', 'IV'];
-  quarters.forEach((q, i) => { q.label = `Trimestre ${ROMAN[i]}`; });
 
   // ── PDF setup ─────────────────────────────────────────────────────────────
   const doc   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });

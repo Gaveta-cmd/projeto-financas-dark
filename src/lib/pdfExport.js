@@ -553,6 +553,102 @@ export function generateAnnualReport({ transactions, year, userName }) {
   doc.save(`VibeFinance_Relatorio_Anual_${year}.pdf`);
 }
 
+// ─── Fallback data generators (used when user has no real data) ───────────────
+function generateFallbackTransactions(startISO, endISO) {
+  const categories = ['alimentacao', 'transporte', 'lazer', 'moradia', 'saude', 'outros'];
+  const expenseTemplates = [
+    { title: 'Supermercado', category: 'alimentacao', min: 120, max: 380 },
+    { title: 'Restaurante', category: 'alimentacao', min: 35, max: 95 },
+    { title: 'iFood', category: 'alimentacao', min: 28, max: 72 },
+    { title: 'Padaria', category: 'alimentacao', min: 18, max: 45 },
+    { title: 'Combustível', category: 'transporte', min: 80, max: 220 },
+    { title: 'Uber', category: 'transporte', min: 22, max: 60 },
+    { title: 'Estacionamento', category: 'transporte', min: 15, max: 40 },
+    { title: 'Ônibus', category: 'transporte', min: 8, max: 20 },
+    { title: 'Cinema', category: 'lazer', min: 30, max: 80 },
+    { title: 'Streaming', category: 'lazer', min: 25, max: 55 },
+    { title: 'Bar / Happy Hour', category: 'lazer', min: 40, max: 120 },
+    { title: 'Academia', category: 'saude', min: 80, max: 180 },
+    { title: 'Farmácia', category: 'saude', min: 30, max: 110 },
+    { title: 'Plano de saúde', category: 'saude', min: 180, max: 350 },
+    { title: 'Aluguel', category: 'moradia', min: 900, max: 1800 },
+    { title: 'Conta de luz', category: 'moradia', min: 80, max: 180 },
+    { title: 'Internet', category: 'moradia', min: 80, max: 130 },
+    { title: 'Condomínio', category: 'moradia', min: 300, max: 700 },
+    { title: 'Água e esgoto', category: 'moradia', min: 40, max: 90 },
+    { title: 'Compras diversas', category: 'outros', min: 50, max: 200 },
+    { title: 'Presente', category: 'outros', min: 60, max: 250 },
+  ];
+
+  const rand = (min, max) => Math.round((min + Math.random() * (max - min)) * 100) / 100;
+  const randInt = (min, max) => Math.floor(min + Math.random() * (max - min + 1));
+  const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+
+  const [sy, sm] = startISO.split('-').map(Number);
+  const [ey, em] = endISO.split('-').map(Number);
+
+  const result = [];
+  let txIdx = 0;
+  let y = sy, m = sm;
+
+  while (y < ey || (y === ey && m <= em)) {
+    const isoMonth = `${y}-${String(m).padStart(2, '0')}`;
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const lastDay = (y === ey && m === em) ? Math.min(daysInMonth, parseInt(endISO.split('-')[2], 10)) : daysInMonth;
+
+    // Salary on day 5 (or closest valid day)
+    const salaryDay = clamp(5, 1, lastDay);
+    const salaryAmount = rand(4500, 6500);
+    result.push({
+      id: `fallback_${txIdx++}`,
+      date: `${isoMonth}-${String(salaryDay).padStart(2, '0')}`,
+      title: 'Salário',
+      amount: salaryAmount,
+      type: 'income',
+      category: 'outros',
+    });
+
+    // 12–18 expenses scattered across the month
+    const expenseCount = randInt(12, 18);
+    const shuffled = [...expenseTemplates].sort(() => Math.random() - 0.5).slice(0, expenseCount);
+    shuffled.forEach((tmpl) => {
+      const day = randInt(1, lastDay);
+      result.push({
+        id: `fallback_${txIdx++}`,
+        date: `${isoMonth}-${String(day).padStart(2, '0')}`,
+        title: tmpl.title,
+        amount: rand(tmpl.min, tmpl.max),
+        type: 'expense',
+        category: tmpl.category,
+      });
+    });
+
+    if (++m > 12) { m = 1; y++; }
+  }
+
+  return result.sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+function generateFallbackInstallments() {
+  return [
+    { id: 'fi_1', name: 'Notebook', total_amount: 3600, total_installments: 12, paid_installments: 4 },
+    { id: 'fi_2', name: 'Celular', total_amount: 2400, total_installments: 10, paid_installments: 5 },
+    { id: 'fi_3', name: 'TV 55"', total_amount: 1800, total_installments: 6, paid_installments: 6 },
+    { id: 'fi_4', name: 'Geladeira', total_amount: 2700, total_installments: 12, paid_installments: 6 },
+  ];
+}
+
+function generateFallbackSubscriptions() {
+  return [
+    { id: 'fs_1', name: 'Netflix', amount: 39.90, cycle: 'monthly' },
+    { id: 'fs_2', name: 'Spotify', amount: 21.90, cycle: 'monthly' },
+    { id: 'fs_3', name: 'Amazon Prime', amount: 19.90, cycle: 'monthly' },
+    { id: 'fs_4', name: 'YouTube Premium', amount: 27.90, cycle: 'monthly' },
+    { id: 'fs_5', name: 'iCloud 50 GB', amount: 4.90, cycle: 'monthly' },
+    { id: 'fs_6', name: 'Antivírus', amount: 89.90, cycle: 'annual' },
+  ];
+}
+
 // ─── Helper: lista de meses entre dois ISO dates ─────────────────────────────
 function getMonthsInRange(startISO, endISO) {
   const [sy, sm] = startISO.split('-').map(Number);
@@ -577,7 +673,13 @@ export function exportAnnualReport({
 }) {
   const [start, end] = startDate <= endDate ? [startDate, endDate] : [endDate, startDate];
 
-  const filtered = transactions
+  // Auto-fill with realistic fictional data when the user has no real data
+  let effectiveTx   = (!transactions    || transactions.length    === 0) ? generateFallbackTransactions(start, end) : transactions;
+  let effectiveInst = (!installments    || installments.length    === 0) ? generateFallbackInstallments()           : installments;
+  let effectiveSubs = (!subscriptions   || subscriptions.length   === 0) ? generateFallbackSubscriptions()         : subscriptions;
+  const isFallback  = (!transactions    || transactions.length    === 0);
+
+  const filtered = effectiveTx
     .filter((t) => t.date >= start && t.date <= end)
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 
@@ -610,11 +712,11 @@ export function exportAnnualReport({
     .sort((a, b) => b[1] - a[1])
     .map(([cat, val]) => ({ cat, label: CATEGORY_LABELS[cat] ?? cat, val }));
 
-  const subsTotal = subscriptions.reduce((s, sub) => {
+  const subsTotal = effectiveSubs.reduce((s, sub) => {
     const amt = Number(sub.amount);
     return s + (sub.cycle === 'monthly' ? amt * months.length : amt);
   }, 0);
-  const installTotal = installments.reduce((s, inst) => s + Number(inst.total_amount), 0);
+  const installTotal = effectiveInst.reduce((s, inst) => s + Number(inst.total_amount), 0);
 
   const top10 = [...filtered].sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 10);
 
@@ -720,6 +822,12 @@ export function exportAnnualReport({
   doc.setFontSize(10);
   doc.setTextColor(113, 113, 122);
   doc.text(periodStr, pageW / 2, cy + 47, { align: 'center' });
+
+  if (isFallback) {
+    doc.setFontSize(7.5);
+    doc.setTextColor(239, 35, 60);
+    doc.text('DADOS DE EXEMPLO — adicione suas transações para ver seu relatório real', pageW / 2, pageH - 24, { align: 'center' });
+  }
 
   doc.setFontSize(8);
   doc.setTextColor(70, 70, 70);
@@ -920,14 +1028,14 @@ export function exportAnnualReport({
   y = drawHeader('Assinaturas', `Assinaturas Ativas — ${periodStr}`);
   y = sectionLabel('ASSINATURAS', y);
 
-  if (subscriptions.length === 0) {
+  if (effectiveSubs.length === 0) {
     emptyNote('Nenhuma assinatura cadastrada.', y);
   } else {
     autoTable(doc, {
       startY: y,
       margin: { left: margin, right: margin },
       head: [['Assinatura', 'Valor', 'Ciclo', 'Próx. Cobrança', 'Total Est. no Período']],
-      body: subscriptions.map((sub) => {
+      body: effectiveSubs.map((sub) => {
         const amt            = Number(sub.amount);
         const totalInPeriod  = sub.cycle === 'monthly' ? amt * months.length : amt;
         return [
@@ -958,14 +1066,14 @@ export function exportAnnualReport({
   y = drawHeader('Parcelamentos', `Parcelamentos — ${periodStr}`);
   y = sectionLabel('PARCELAMENTOS', y);
 
-  if (installments.length === 0) {
+  if (effectiveInst.length === 0) {
     emptyNote('Nenhum parcelamento cadastrado.', y);
   } else {
     autoTable(doc, {
       startY: y,
       margin: { left: margin, right: margin },
       head: [['Nome', 'Valor Total', 'Parcelas', 'Pagas', 'Status']],
-      body: installments.map((inst) => {
+      body: effectiveInst.map((inst) => {
         const active = inst.paid_installments < inst.total_installments;
         return [
           inst.name,
@@ -989,7 +1097,7 @@ export function exportAnnualReport({
       },
       didParseCell(data) {
         if (data.section !== 'body' || data.column.index !== 4) return;
-        const inst = installments[data.row.index];
+        const inst = effectiveInst[data.row.index];
         if (!inst) return;
         data.cell.styles.textColor = inst.paid_installments < inst.total_installments ? [239, 35, 60] : [16, 185, 129];
         data.cell.styles.fontStyle = 'bold';
@@ -1103,8 +1211,8 @@ export function exportAnnualReport({
     topCat ? `Categoria com maior gasto: ${topCat.label} (R$ ${brl(topCat.val)})` : null,
     bestMonth  ? `Melhor mês: ${MONTH_NAMES[bestMonth.month]} ${bestMonth.year} (saldo R$ ${brl(bestMonth.balance)})` : null,
     worstMonth ? `Mês com maior gasto: ${MONTH_NAMES[worstMonth.month]} ${worstMonth.year} (R$ ${brl(worstMonth.expense)})` : null,
-    subscriptions.length > 0 ? `${subscriptions.length} assinatura(s) ativa(s) — custo estimado no período: R$ ${brl(subsTotal)}` : null,
-    installments.length > 0  ? `${installments.length} parcelamento(s) — total: R$ ${brl(installTotal)}` : null,
+    effectiveSubs.length > 0 ? `${effectiveSubs.length} assinatura(s) ativa(s) — custo estimado no período: R$ ${brl(subsTotal)}` : null,
+    effectiveInst.length > 0 ? `${effectiveInst.length} parcelamento(s) — total: R$ ${brl(installTotal)}` : null,
     goals.length > 0         ? `${goals.length} meta(s) financeira(s) cadastrada(s)` : null,
     `Total de transações no período: ${filtered.length}`,
   ].filter(Boolean);

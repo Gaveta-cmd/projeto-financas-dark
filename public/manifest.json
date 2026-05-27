@@ -1,10 +1,12 @@
 {
+  "id": "/",
   "name": "VibeFinance - Seu Dinheiro Inteligente",
   "short_name": "VibeFinance",
   "description": "Controle de gastos por categoria, relatórios PDF e reserva de emergência",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait-primary",
   "theme_color": "#ef233c",
   "background_color": "#000000",

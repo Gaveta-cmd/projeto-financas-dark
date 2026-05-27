@@ -1,6 +1,6 @@
 // VibeFinance Service Worker — Offline-First (stale-while-revalidate)
 // Bump CACHE_VERSION when deploying breaking changes to force cache refresh.
-const CACHE_VERSION = 'vf-v2';
+const CACHE_VERSION = 'vf-v3';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -8,10 +8,10 @@ const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const PRECACHE_URLS = ['/', '/manifest.json', '/icon-192x192.png', '/icon-512x512.png'];
 
 // Hostnames whose responses are never cached (always need fresh data)
+// Note: fonts.googleapis.com and fonts.gstatic.com are handled explicitly below
 const BYPASS_HOSTS = [
   'supabase.co',
   'supabase.in',
-  'googleapis.com',   // Google Fonts API calls
 ];
 
 // ── Install: pre-cache shell ─────────────────────────────────────────────────
@@ -43,14 +43,15 @@ self.addEventListener('fetch', (event) => {
   let url;
   try { url = new URL(request.url); } catch { return; }
 
-  // Never intercept external APIs
-  if (BYPASS_HOSTS.some((h) => url.hostname.includes(h))) return;
-
-  // Google Fonts CSS/files: cache-first (stable, versioned URLs)
-  if (url.hostname === 'fonts.gstatic.com') {
+  // Google Fonts CSS and font files: cache-first (stable, versioned URLs)
+  // Must be checked BEFORE BYPASS_HOSTS to avoid being skipped
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
     event.respondWith(cacheFirst(request, RUNTIME_CACHE));
     return;
   }
+
+  // Never intercept external APIs (Supabase REST, realtime, auth)
+  if (BYPASS_HOSTS.some((h) => url.hostname.includes(h))) return;
 
   // Navigation (HTML pages): network-first → fallback to cached shell
   if (request.mode === 'navigate') {

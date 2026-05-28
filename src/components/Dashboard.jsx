@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutGrid, ArrowLeftRight, CalendarClock,
@@ -14,6 +14,9 @@ import { CategoriesTab } from './dashboard/CategoriesTab';
 import { ConnectedAccounts } from './ConnectedAccounts';
 import { NotificationToast } from './NotificationToast';
 import { useUpcomingNotifications } from '../hooks/useUpcomingNotifications';
+import { useNotificationService } from '../hooks/useNotificationService';
+import { useDemoMode } from '../contexts/DemoContext';
+import { supabase } from '../lib/supabaseClient';
 
 const TABS = [
   { id: 'overview',      label: 'Visão Geral',    icon: LayoutGrid      },
@@ -30,10 +33,57 @@ const subTabVariants = {
   exit:    { opacity: 0, y: -8, transition: { duration: 0.18 } },
 };
 
+// Send notifications for urgent items (daysLeft <= 2) once per session
+function useAutoNotifications(notifications) {
+  const { isDemo } = useDemoMode();
+  const { sendEmail, sendPush } = useNotificationService();
+  const notifiedRef = useRef(new Set());
+
+  useEffect(() => {
+    if (isDemo || !notifications.length || !supabase) return;
+
+    const urgent = notifications.filter(n => n.daysLeft <= 2);
+    if (!urgent.length) return;
+
+    async function dispatch() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.email) return;
+
+        const email = session.user.email;
+
+        for (const notif of urgent) {
+          if (notifiedRef.current.has(notif.id)) continue;
+          notifiedRef.current.add(notif.id);
+
+          const daysLabel = notif.daysLeft === 0 ? 'hoje'
+            : notif.daysLeft === 1 ? 'amanhã'
+            : `em ${notif.daysLeft} dias`;
+
+          const subject = notif.title;
+          const message = `${notif.title} vence ${daysLabel}. Acesse o VibeFinance para gerenciar seus vencimentos.`;
+
+          // Send email (rate limited internally — max 1x/hour per item)
+          sendEmail(email, subject, message).catch(() => null);
+
+          // Send push notification (no-op if permission not granted)
+          sendPush(subject, `Vence ${daysLabel}`, '/icon-192x192.png').catch(() => null);
+        }
+      } catch {
+        // Errors are non-fatal — notification failures shouldn't crash the dashboard
+      }
+    }
+
+    dispatch();
+  }, [notifications, isDemo, sendEmail, sendPush]);
+}
+
 export function Dashboard({ accounts = [], onConnect, onDisconnect, onGoToGoals }) {
   const [subTab, setSubTab] = useState('overview');
   const { notifications } = useUpcomingNotifications();
   const [dismissedNotifications, setDismissedNotifications] = useState(new Set());
+
+  useAutoNotifications(notifications);
 
   const visibleNotifications = useMemo(
     () => notifications.filter((n) => !dismissedNotifications.has(n.id)),

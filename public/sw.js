@@ -74,6 +74,33 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
+// ── Push Notifications ────────────────────────────────────────────────────────
+
+self.addEventListener('push', (event) => {
+  const defaults = { title: 'VibeFinance', body: 'Nova notificação', icon: '/icon-192x192.png' };
+  let payload = defaults;
+  try { payload = { ...defaults, ...event.data.json() }; } catch { /* keep defaults */ }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body:   payload.body,
+      icon:   payload.icon || '/icon-192x192.png',
+      badge:  '/icon-192x192.png',
+      tag:    'vibefinance-notification',
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((windows) => {
+      if (windows.length > 0) return windows[0].focus();
+      return self.clients.openWindow('/');
+    })
+  );
+});
+
 // ── Cache helpers ─────────────────────────────────────────────────────────────
 
 async function cacheFirst(request, cacheName) {

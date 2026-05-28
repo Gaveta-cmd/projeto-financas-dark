@@ -34,7 +34,7 @@ export function LandingFooter() {
                 VibeFinance
               </span>
             </div>
-            <p className="text-gray-500 text-sm leading-relaxed">
+            <p className="text-gray-400 text-sm leading-relaxed">
               Controle financeiro inteligente, offline-first e sempre responsivo.
             </p>
           </div>
@@ -42,7 +42,7 @@ export function LandingFooter() {
           {/* Columns */}
           {COLUMNS.map(col => (
             <div key={col.title}>
-              <h4 className="text-white font-semibold text-sm mb-4 font-heading">{col.title}</h4>
+              <h3 className="text-white font-semibold text-sm mb-4 font-heading">{col.title}</h3>
               <ul className="space-y-2.5">
                 {col.links.map(link => (
                   <li key={link}>
@@ -62,10 +62,10 @@ export function LandingFooter() {
 
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-[#27272a] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-gray-600 text-xs">
+          <p className="text-gray-400 text-xs">
             © {new Date().getFullYear()} VibeFinance. Todos os direitos reservados.
           </p>
-          <p className="text-gray-700 text-xs">
+          <p className="text-gray-400 text-xs">
             Feito com ♥ no Brasil
           </p>
         </div>

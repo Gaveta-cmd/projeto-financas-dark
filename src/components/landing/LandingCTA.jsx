@@ -48,22 +48,22 @@ export function LandingCTA({ onGetStarted }) {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             className="flex items-center gap-3 bg-[#18181b] border border-[#27272a] hover:border-accent/40 rounded-xl px-5 py-3.5 transition-all duration-200 hover:-translate-y-0.5 group"
-            aria-label="App Store"
+            aria-label="Disponível na App Store"
           >
             <Apple className="w-6 h-6 text-gray-300 group-hover:text-white transition-colors" />
             <div className="text-left">
-              <p className="text-[10px] text-gray-500 leading-none mb-0.5">Disponível na</p>
+              <p className="text-[10px] text-gray-400 leading-none mb-0.5">Disponível na</p>
               <p className="text-sm font-semibold text-white">App Store</p>
             </div>
           </button>
 
           <button
             className="flex items-center gap-3 bg-[#18181b] border border-[#27272a] hover:border-accent/40 rounded-xl px-5 py-3.5 transition-all duration-200 hover:-translate-y-0.5 group"
-            aria-label="Google Play"
+            aria-label="Disponível no Google Play"
           >
             <Smartphone className="w-6 h-6 text-gray-300 group-hover:text-white transition-colors" />
             <div className="text-left">
-              <p className="text-[10px] text-gray-500 leading-none mb-0.5">Disponível no</p>
+              <p className="text-[10px] text-gray-400 leading-none mb-0.5">Disponível no</p>
               <p className="text-sm font-semibold text-white">Google Play</p>
             </div>
           </button>

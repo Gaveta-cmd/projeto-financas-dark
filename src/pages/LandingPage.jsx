@@ -10,11 +10,13 @@ export function LandingPage({ onLogin, onGetStarted, onDemo }) {
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
       <LandingNav onLogin={onLogin} onGetStarted={onGetStarted} />
-      <LandingHero onGetStarted={onGetStarted} onDemo={onDemo} />
-      <LandingTicker />
-      <LandingFeatures />
-      <LandingStats />
-      <LandingCTA onGetStarted={onGetStarted} />
+      <main>
+        <LandingHero onGetStarted={onGetStarted} onDemo={onDemo} />
+        <LandingTicker />
+        <LandingFeatures />
+        <LandingStats />
+        <LandingCTA onGetStarted={onGetStarted} />
+      </main>
       <LandingFooter />
     </div>
   );

@@ -15,7 +15,7 @@ function StatCard({ value, label, sub }) {
         {value}
       </div>
       <p className="text-white font-semibold text-[15px] mb-1">{label}</p>
-      <p className="text-gray-500 text-xs">{sub}</p>
+      <p className="text-gray-400 text-xs">{sub}</p>
     </div>
   );
 }
@@ -26,7 +26,7 @@ export function LandingStats() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12 animate-fade-in-slide">
-          <span className="inline-block text-[11px] font-bold uppercase tracking-widest text-accent mb-3">
+          <span className="inline-block text-[11px] font-bold uppercase tracking-widest text-red-400 mb-3">
             Números
           </span>
           <h2

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutGrid, ArrowLeftRight, CalendarClock,
@@ -7,7 +7,16 @@ import {
 
 import { DashboardTabs } from './dashboard/DashboardTabs';
 import { OverviewTab } from './dashboard/OverviewTab';
-import { Transactions } from './Transactions';
+
+const Transactions = lazy(() => import('./Transactions').then((m) => ({ default: m.Transactions })));
+
+function TabFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+    </div>
+  );
+}
 import { InstallmentsTab } from './dashboard/InstallmentsTab';
 import { SubscriptionsTab } from './dashboard/SubscriptionsTab';
 import { CategoriesTab } from './dashboard/CategoriesTab';
@@ -123,7 +132,11 @@ export function Dashboard({ accounts = [], onConnect, onDisconnect, onGoToGoals 
               onGoToBanks={() => setSubTab('cards')}
             />
           )}
-          {subTab === 'transactions'  && <Transactions />}
+          {subTab === 'transactions' && (
+            <Suspense fallback={<TabFallback />}>
+              <Transactions />
+            </Suspense>
+          )}
           {subTab === 'installments'  && <InstallmentsTab />}
           {subTab === 'subscriptions' && <SubscriptionsTab />}
           {subTab === 'categories'    && <CategoriesTab />}

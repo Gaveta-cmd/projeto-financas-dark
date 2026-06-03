@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from './lib/supabaseClient';
 import { clearBankData } from './lib/bankSeed';
@@ -6,7 +6,6 @@ import { Login } from './components/Login';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
-import { Goals } from './components/Goals';
 import { Profile } from './components/Profile';
 import { Preferences } from './components/Preferences';
 import { ChangePassword } from './components/ChangePassword';
@@ -20,6 +19,16 @@ import { useDemoMode } from './contexts/DemoContext';
 import { useOnboarding } from './hooks/useOnboarding';
 import { DEMO_DATA, DEMO_SESSION } from './data/demoData';
 import { LandingPage } from './pages/LandingPage';
+
+const Goals = lazy(() => import('./components/Goals').then((m) => ({ default: m.Goals })));
+
+function TabFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+    </div>
+  );
+}
 
 const STORAGE_KEY  = 'vf_accounts';
 const THEME_KEY    = 'vf_theme';
@@ -252,7 +261,9 @@ function App() {
               )}
               {activeTab === 'goals' && (
                 <motion.div key="goals" {...pageVariants}>
-                  <Goals />
+                  <Suspense fallback={<TabFallback />}>
+                    <Goals />
+                  </Suspense>
                 </motion.div>
               )}
               {activeTab === 'profile' && (

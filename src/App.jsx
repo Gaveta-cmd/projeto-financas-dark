@@ -16,9 +16,11 @@ import { DemoBlockModal } from './components/DemoBlockModal';
 import { ResetPassword } from './components/ResetPassword';
 import { OnboardingModal } from './components/OnboardingModal';
 import { useDemoMode } from './contexts/DemoContext';
+import { HouseholdProvider, useHouseholdCtx } from './contexts/HouseholdContext';
 import { useOnboarding } from './hooks/useOnboarding';
 import { DEMO_DATA, DEMO_SESSION } from './data/demoData';
 import { LandingPage } from './pages/LandingPage';
+import { HouseholdSetup } from './components/HouseholdSetup';
 
 const Goals = lazy(() => import('./components/Goals').then((m) => ({ default: m.Goals })));
 
@@ -28,6 +30,13 @@ function TabFallback() {
       <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
     </div>
   );
+}
+
+// Guard que mostra HouseholdSetup se o usuário ainda não pertence a nenhum grupo familiar
+function HouseholdGuard({ userId }) {
+  const ctx = useHouseholdCtx();
+  if (!ctx || ctx.loading || ctx.household) return null;
+  return <HouseholdSetup userId={userId} onComplete={ctx.refresh} />;
 }
 
 const STORAGE_KEY  = 'vf_accounts';
@@ -214,6 +223,7 @@ function App() {
           <Login onLogin={setSession} onEnterDemo={enterDemo} initialMode={loginMode} onBack={() => setShowLanding(true)} />
         </motion.div>
       ) : (
+        <HouseholdProvider userId={activeSession?.user?.id}>
         <motion.div
           key="app"
           initial={{ opacity: 0 }}
@@ -313,7 +323,15 @@ function App() {
               />
             )}
           </AnimatePresence>
+
+          {/* Setup de household para quem completou o onboarding mas ainda não tem grupo */}
+          <AnimatePresence>
+            {!showOnboarding && !isDemo && onboardingCompleted && (
+              <HouseholdGuard userId={activeSession?.user?.id} />
+            )}
+          </AnimatePresence>
         </motion.div>
+        </HouseholdProvider>
       )}
     </AnimatePresence>
   );

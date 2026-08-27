@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useDemoMode } from '../contexts/DemoContext';
+import { useHouseholdCtx } from '../contexts/HouseholdContext';
 import { DEMO_USER } from '../data/demoData';
 import { getLastThreeMonths, exportMonthlyPDF } from '../lib/pdfExport';
 import { AnnualReportModal } from './AnnualReportModal';
@@ -55,13 +56,17 @@ const itemVariants = {
 // Form em sub-componente: monta/desmonta junto com o modal, então o estado
 // reseta naturalmente sem precisar de useEffect.
 function AddTransactionForm({ onClose, onCreated }) {
-  const [type, setType]         = useState('expense');
-  const [title, setTitle]       = useState('');
-  const [amount, setAmount]     = useState('');
+  const hhCtx = useHouseholdCtx();
+  const userCards = (hhCtx?.cards ?? []).filter(c => c.user_id === hhCtx?.currentMember?.user_id);
+
+  const [type,    setType]    = useState('expense');
+  const [title,   setTitle]   = useState('');
+  const [amount,  setAmount]  = useState('');
   const [category, setCategory] = useState('alimentacao');
-  const [date, setDate]         = useState(todayISO);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState('');
+  const [date,    setDate]    = useState(todayISO);
+  const [cardId,  setCardId]  = useState('');
+  const [saving,  setSaving]  = useState(false);
+  const [error,   setError]   = useState('');
 
   const parsedAmount = useMemo(() => {
     const cleaned = amount.replace(/\./g, '').replace(',', '.');
@@ -89,11 +94,13 @@ function AddTransactionForm({ onClose, onCreated }) {
     const { data, error: insertErr } = await supabase
       .from('transactions')
       .insert({
-        title: title.trim().slice(0, 120),
-        amount: parsedAmount,
+        title:        title.trim().slice(0, 120),
+        amount:       parsedAmount,
         category,
         type,
         date,
+        card_id:      cardId || null,
+        household_id: hhCtx?.household?.id ?? null,
       })
       .select()
       .single();
@@ -224,6 +231,25 @@ function AddTransactionForm({ onClose, onCreated }) {
                   })}
                 </div>
               </div>
+
+              {/* Cartão (opcional) */}
+              {userCards.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    Cartão utilizado <span className="text-gray-400 font-normal normal-case">(opcional)</span>
+                  </label>
+                  <select
+                    value={cardId}
+                    onChange={e => setCardId(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-lg px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors"
+                  >
+                    <option value="">Sem cartão</option>
+                    {userCards.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}{c.bank ? ` · ${c.bank}` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Data */}
               <div>

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutGrid, ArrowLeftRight, CalendarClock,
-  Repeat, PieChart, Landmark,
+  Repeat, PieChart, CreditCard, Home,
 } from 'lucide-react';
 
 import { DashboardTabs } from './dashboard/DashboardTabs';
@@ -20,7 +20,8 @@ function TabFallback() {
 import { InstallmentsTab } from './dashboard/InstallmentsTab';
 import { SubscriptionsTab } from './dashboard/SubscriptionsTab';
 import { CategoriesTab } from './dashboard/CategoriesTab';
-import { ConnectedAccounts } from './ConnectedAccounts';
+import { HouseholdTab } from './dashboard/HouseholdTab';
+import { CardsTab } from './dashboard/CardsTab';
 import { NotificationToast } from './NotificationToast';
 import { useUpcomingNotifications } from '../hooks/useUpcomingNotifications';
 import { useNotificationService } from '../hooks/useNotificationService';
@@ -28,12 +29,13 @@ import { useDemoMode } from '../contexts/DemoContext';
 import { supabase } from '../lib/supabaseClient';
 
 const TABS = [
+  { id: 'household',     label: 'Casa',           icon: Home            },
   { id: 'overview',      label: 'Visão Geral',    icon: LayoutGrid      },
   { id: 'transactions',  label: 'Transações',     icon: ArrowLeftRight  },
   { id: 'installments',  label: 'Parcelamentos',  icon: CalendarClock   },
   { id: 'subscriptions', label: 'Assinaturas',    icon: Repeat          },
   { id: 'categories',    label: 'Categorias',     icon: PieChart        },
-  { id: 'cards',         label: 'Bancos',         icon: Landmark        },
+  { id: 'cards',         label: 'Cartões',        icon: CreditCard      },
 ];
 
 const subTabVariants = {
@@ -124,6 +126,7 @@ export function Dashboard({ accounts = [], onConnect, onDisconnect, onGoToGoals 
           animate="animate"
           exit="exit"
         >
+          {subTab === 'household' && <HouseholdTab />}
           {subTab === 'overview' && (
             <OverviewTab
               accounts={accounts}
@@ -140,15 +143,7 @@ export function Dashboard({ accounts = [], onConnect, onDisconnect, onGoToGoals 
           {subTab === 'installments'  && <InstallmentsTab />}
           {subTab === 'subscriptions' && <SubscriptionsTab />}
           {subTab === 'categories'    && <CategoriesTab />}
-          {subTab === 'cards' && (
-            <ConnectedAccounts
-              accounts={accounts}
-              onConnect={onConnect}
-              onDisconnect={onDisconnect}
-              eyebrow="Integração Bancária"
-              title={<>Ban<span className="text-accent">cos</span></>}
-            />
-          )}
+          {subTab === 'cards' && <CardsTab />}
         </motion.div>
       </AnimatePresence>
     </div>

@@ -34,3 +34,6 @@ supabase/.temp/
 
 # Senhas locais do banco
 .env
+
+# Backups locais do banco
+backups/

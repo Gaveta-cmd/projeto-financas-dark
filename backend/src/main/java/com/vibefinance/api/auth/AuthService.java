@@ -32,6 +32,8 @@ public class AuthService {
 	private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 	private static final int MIN_PASSWORD = 8;
 	private static final int MAX_PASSWORD = 72; // limite do bcrypt
+	/** Marca contas importadas sem senha; não é um hash bcrypt, então nenhum login casa com ela. */
+	public static final String PENDING_PASSWORD = "PENDING";
 
 	private final JdbcTemplate jdbc;
 	private final PasswordEncoder passwordEncoder;
@@ -50,11 +52,20 @@ public class AuthService {
 
 	@Transactional
 	public Map<String, Object> signUp(String rawEmail, String password, Map<String, Object> metadata) {
+		String email = normalizeEmail(rawEmail);
+		validatePassword(password);
+
+		// Conta migrada sem senha: o primeiro cadastro com esse e-mail define a senha e assume a conta.
+		List<String> pending = jdbc.queryForList("select id from users where email = ? and password_hash = ?",
+				String.class, email, PENDING_PASSWORD);
+		if (!pending.isEmpty()) {
+			jdbc.update("update users set password_hash = ? where id = ?", passwordEncoder.encode(password),
+					pending.get(0));
+			return newSession(pending.get(0));
+		}
 		if (!signupEnabled) {
 			throw ApiException.forbidden("O cadastro de novos usuários está desativado.");
 		}
-		String email = normalizeEmail(rawEmail);
-		validatePassword(password);
 
 		String id = UUID.randomUUID().toString();
 		try {

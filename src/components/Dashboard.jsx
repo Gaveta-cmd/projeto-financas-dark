@@ -2,11 +2,11 @@ import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutGrid, ArrowLeftRight, CalendarClock,
-  Repeat, PieChart, CreditCard, Home,
+  Repeat, PieChart, CreditCard, Home, Calculator, Brain,
 } from 'lucide-react';
 
 import { DashboardTabs } from './dashboard/DashboardTabs';
-import { OverviewTab } from './dashboard/OverviewTab';
+import { FamilyCockpit } from './dashboard/FamilyCockpit';
 
 const Transactions = lazy(() => import('./Transactions').then((m) => ({ default: m.Transactions })));
 
@@ -22,6 +22,8 @@ import { SubscriptionsTab } from './dashboard/SubscriptionsTab';
 import { CategoriesTab } from './dashboard/CategoriesTab';
 import { HouseholdTab } from './dashboard/HouseholdTab';
 import { CardsTab } from './dashboard/CardsTab';
+import { SimulatorTab }     from './dashboard/SimulatorTab';
+import { PlanejamentoTab }  from './dashboard/PlanejamentoTab';
 import { NotificationToast } from './NotificationToast';
 import { useUpcomingNotifications } from '../hooks/useUpcomingNotifications';
 import { useNotificationService } from '../hooks/useNotificationService';
@@ -35,7 +37,9 @@ const TABS = [
   { id: 'installments',  label: 'Parcelamentos',  icon: CalendarClock   },
   { id: 'subscriptions', label: 'Assinaturas',    icon: Repeat          },
   { id: 'categories',    label: 'Categorias',     icon: PieChart        },
-  { id: 'cards',         label: 'Cartões',        icon: CreditCard      },
+  { id: 'simulator',    label: 'Simulador',      icon: Calculator      },
+  { id: 'planejamento', label: 'Planejamento',   icon: Brain           },
+  { id: 'cards',        label: 'Cartões',        icon: CreditCard      },
 ];
 
 const subTabVariants = {
@@ -128,11 +132,8 @@ export function Dashboard({ accounts = [], onConnect, onDisconnect, onGoToGoals 
         >
           {subTab === 'household' && <HouseholdTab />}
           {subTab === 'overview' && (
-            <OverviewTab
-              accounts={accounts}
+            <FamilyCockpit
               onGoToTransactions={() => setSubTab('transactions')}
-              onGoToGoals={onGoToGoals}
-              onGoToBanks={() => setSubTab('cards')}
             />
           )}
           {subTab === 'transactions' && (
@@ -143,6 +144,8 @@ export function Dashboard({ accounts = [], onConnect, onDisconnect, onGoToGoals 
           {subTab === 'installments'  && <InstallmentsTab />}
           {subTab === 'subscriptions' && <SubscriptionsTab />}
           {subTab === 'categories'    && <CategoriesTab />}
+          {subTab === 'simulator'     && <SimulatorTab />}
+          {subTab === 'planejamento'  && <PlanejamentoTab />}
           {subTab === 'cards' && <CardsTab />}
         </motion.div>
       </AnimatePresence>

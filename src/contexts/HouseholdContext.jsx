@@ -4,11 +4,12 @@ import { supabase } from '../lib/supabaseClient';
 const HouseholdContext = createContext(null);
 
 export function HouseholdProvider({ userId, children }) {
-  const [household,      setHousehold]      = useState(null);
-  const [members,        setMembers]        = useState([]);
-  const [cards,          setCards]          = useState([]);
-  const [currentMember,  setCurrentMember]  = useState(null);
-  const [loading,        setLoading]        = useState(true);
+  const [household,       setHousehold]      = useState(null);
+  const [members,         setMembers]        = useState([]);
+  const [cards,           setCards]          = useState([]);
+  const [currentMember,   setCurrentMember]  = useState(null);
+  const [loading,         setLoading]        = useState(true);
+  const [selectedMember,  setSelectedMember] = useState('all'); // 'all' | user_id
 
   const refresh = useCallback(async () => {
     if (!userId || !supabase) {
@@ -68,6 +69,9 @@ export function HouseholdProvider({ userId, children }) {
       loading,
       refresh,
       refreshCards,
+      userId,
+      selectedMember,
+      setSelectedMember,
     }}>
       {children}
     </HouseholdContext.Provider>

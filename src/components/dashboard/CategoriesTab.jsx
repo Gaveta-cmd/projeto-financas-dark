@@ -11,6 +11,7 @@ import confetti from 'canvas-confetti';
 import { supabase } from '../../lib/supabaseClient';
 import { useDemoMode } from '../../contexts/DemoContext';
 import { useSpendingLimits } from '../../hooks/useSpendingLimits';
+import { useHouseholdCtx } from '../../contexts/HouseholdContext';
 
 const CATEGORIES = [
   { key: 'alimentacao',   label: 'Alimentação',   icon: Utensils,       color: '#ef233c' },
@@ -113,7 +114,7 @@ function ChangeBadge({ change }) {
 
 function LimitBar({ spent, limit }) {
   const ratio = limit > 0 ? spent / limit : 0;
-  const barColor = ratio > 1 ? '#ef4444' : ratio > 0.8 ? '#f59e0b' : '#10b981';
+  const barColor = ratio >= 0.9 ? '#ef4444' : ratio >= 0.6 ? '#f59e0b' : '#10b981';
   return (
     <div className="h-1.5 w-full bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
       <motion.div
@@ -127,9 +128,22 @@ function LimitBar({ spent, limit }) {
   );
 }
 
+const MEMBER_COLORS_CAT = ['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#ec4899'];
+function initialsFromName(name = '') {
+  return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+}
+
 export function CategoriesTab() {
   const { isDemo, demoData } = useDemoMode();
-  const { limits, saveLimit, loading: loadingLimits } = useSpendingLimits();
+  const hhCtx = useHouseholdCtx();
+  const members = hhCtx?.members ?? [];
+  const currentUserId = hhCtx?.currentMember?.user_id ?? null;
+  const { personalLimits, householdLimits, saveLimit, loading: loadingLimits } = useSpendingLimits();
+  const [budgetScope, setBudgetScope] = useState('personal');
+  // selectedMember lives in global HouseholdContext so all tabs stay in sync
+  const selectedMember    = hhCtx?.selectedMember    ?? 'all';
+  const setSelectedMember = hhCtx?.setSelectedMember ?? (() => {});
+  const limits = budgetScope === 'household' ? householdLimits : personalLimits;
   const [limitInputs, setLimitInputs]   = useState({});
   const [savingLimits, setSavingLimits] = useState({});
 
@@ -168,7 +182,7 @@ export function CategoriesTab() {
         const [txRes, subRes, instRes] = await Promise.all([
           supabase
             .from('transactions')
-            .select('amount, category, type, date, title')
+            .select('amount, category, type, date, title, user_id')
             .eq('type', 'expense')
             .gte('date', isoDay(previous.start))
             .lte('date', isoDay(current.end)),
@@ -226,7 +240,14 @@ export function CategoriesTab() {
     const totalsCurrent  = empty();
     const totalsPrevious = empty();
 
-    for (const t of transactions) {
+    // Filtro de membro: selectedMember tem prioridade; fallback para budgetScope
+    const txFiltered = selectedMember !== 'all'
+      ? transactions.filter((t) => t.user_id === selectedMember)
+      : budgetScope === 'personal' && currentUserId
+        ? transactions.filter((t) => t.user_id === currentUserId)
+        : transactions;
+
+    for (const t of txFiltered) {
       const v = Number(t.amount);
       if (!Number.isFinite(v)) continue;
       const catKey = CATEGORY_BY_KEY[t.category] ? t.category : 'outros';
@@ -237,13 +258,24 @@ export function CategoriesTab() {
       }
     }
 
-    // Inclui assinaturas no mês atual
-    for (const sub of subscriptions) {
-      const monthly = sub.billing_cycle === 'yearly'
-        ? Number(sub.amount) / 12
-        : Number(sub.amount);
-      const catKey = CATEGORY_BY_KEY[sub.category] ? sub.category : 'outros';
-      totalsCurrent[catKey] = (totalsCurrent[catKey] ?? 0) + monthly;
+    // Breakdown por membro dentro de cada categoria (usando TODAS as transações do mês)
+    const byMemberPerCat = {}; // { 'alimentacao': { userId: amount } }
+    for (const t of transactions) {
+      if (t.date < currStart || t.date > currEnd) continue;
+      const catKey = CATEGORY_BY_KEY[t.category] ? t.category : 'outros';
+      if (!byMemberPerCat[catKey]) byMemberPerCat[catKey] = {};
+      byMemberPerCat[catKey][t.user_id] = (byMemberPerCat[catKey][t.user_id] ?? 0) + Number(t.amount);
+    }
+
+    // Inclui assinaturas no mês atual (só quando vendo visão completa)
+    if (selectedMember === 'all') {
+      for (const sub of subscriptions) {
+        const monthly = sub.billing_cycle === 'yearly'
+          ? Number(sub.amount) / 12
+          : Number(sub.amount);
+        const catKey = CATEGORY_BY_KEY[sub.category] ? sub.category : 'outros';
+        totalsCurrent[catKey] = (totalsCurrent[catKey] ?? 0) + monthly;
+      }
     }
 
     // Agrupa subscriptions por categoria para exibição inline
@@ -257,17 +289,18 @@ export function CategoriesTab() {
     const grand = Object.values(totalsCurrent).reduce((s, n) => s + n, 0);
     const rows = CATEGORIES.map((c) => ({
       ...c,
-      value:   totalsCurrent[c.key],
-      prev:    totalsPrevious[c.key],
-      percent: grand > 0 ? (totalsCurrent[c.key] / grand) * 100 : 0,
-      change:  computeChange(totalsCurrent[c.key], totalsPrevious[c.key]),
-      subs:    subsByCat[c.key] ?? [],
+      value:    totalsCurrent[c.key],
+      prev:     totalsPrevious[c.key],
+      percent:  grand > 0 ? (totalsCurrent[c.key] / grand) * 100 : 0,
+      change:   computeChange(totalsCurrent[c.key], totalsPrevious[c.key]),
+      subs:     subsByCat[c.key] ?? [],
+      byMember: byMemberPerCat[c.key] ?? {},
     }))
       .filter((r) => r.value > 0)
       .sort((a, b) => b.value - a.value);
 
     return { rows, total: grand };
-  }, [transactions, subscriptions, current.start, current.end, previous.start, previous.end]);
+  }, [transactions, subscriptions, current.start, current.end, previous.start, previous.end, budgetScope, currentUserId, selectedMember]);
 
   const activeInstallments = useMemo(
     () => installments.filter((i) => Number(i.paid_installments) < Number(i.total_installments)),
@@ -283,7 +316,7 @@ export function CategoriesTab() {
       : limits[category];
     if (!raw || Number(raw) <= 0) return;
     setSavingLimits((prev) => ({ ...prev, [category]: true }));
-    await saveLimit(category, raw);
+    await saveLimit(category, raw, budgetScope);
     setSavingLimits((prev) => ({ ...prev, [category]: false }));
     setLimitInputs((prev) => { const n = { ...prev }; delete n[category]; return n; });
   }
@@ -328,7 +361,62 @@ export function CategoriesTab() {
           </p>
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Seletor de membro */}
+          {members.length > 1 && (
+            <div className="flex items-center gap-1 p-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl">
+              <button
+                onClick={() => setSelectedMember('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  selectedMember === 'all'
+                    ? 'bg-accent text-white'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                Casa
+              </button>
+              {members.map((m, i) => (
+                <button
+                  key={m.user_id}
+                  onClick={() => setSelectedMember(m.user_id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    selectedMember === m.user_id
+                      ? 'bg-accent text-white'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span
+                    className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                    style={{ background: MEMBER_COLORS_CAT[i % MEMBER_COLORS_CAT.length] }}
+                  >
+                    {initialsFromName(m.nickname)}
+                  </span>
+                  {m.nickname}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Toggle orçamento */}
+          {hhCtx?.household && (
+            <div className="flex items-center gap-1 p-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl">
+              {(['personal', 'household']).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => { setBudgetScope(s); setLimitInputs({}); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    budgetScope === s
+                      ? 'bg-accent text-white'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  {s === 'personal' ? 'Limites pessoais' : 'Limites da casa'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-1 p-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl">
           <button
             onClick={() => setMonthOffset((o) => o - 1)}
             className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
@@ -347,6 +435,7 @@ export function CategoriesTab() {
           >
             <ChevronRight className="w-4 h-4" />
           </button>
+          </div>
         </div>
       </div>
 
@@ -467,6 +556,40 @@ export function CategoriesTab() {
                           />
                         </div>
 
+                        {/* Breakdown por membro — visível quando selectedMember === 'all' e há múltiplos membros */}
+                        {selectedMember === 'all' && members.length > 1 && Object.keys(row.byMember).length > 0 && (
+                          <div className="flex flex-col gap-1.5 mb-3">
+                            {members.map((m, mi) => {
+                              const amt = row.byMember[m.user_id];
+                              if (!amt) return null;
+                              const pct = row.value > 0 ? (amt / row.value) * 100 : 0;
+                              return (
+                                <div key={m.user_id} className="flex items-center gap-2">
+                                  <span
+                                    className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                                    style={{ background: MEMBER_COLORS_CAT[mi % MEMBER_COLORS_CAT.length] }}
+                                  >
+                                    {initialsFromName(m.nickname)}
+                                  </span>
+                                  <span className="text-xs text-gray-500 w-14 truncate">{m.nickname}</span>
+                                  <div className="flex-1 h-1.5 bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
+                                    <motion.div
+                                      className="h-full rounded-full"
+                                      style={{ background: MEMBER_COLORS_CAT[mi % MEMBER_COLORS_CAT.length] }}
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${pct}%` }}
+                                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-mono text-gray-700 dark:text-gray-300 w-20 text-right shrink-0">
+                                    R$ {brl(amt)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
                         {/* Assinaturas dentro desta categoria */}
                         {row.subs.length > 0 && (
                           <div className="flex flex-col gap-1.5 mt-1">
@@ -505,13 +628,19 @@ export function CategoriesTab() {
                                   <span className="text-[11px] text-gray-500">
                                     R$ {brl(row.value)} de R$ {brl(limits[row.key])}
                                   </span>
-                                  {row.value > limits[row.key] && (
-                                    <span className="text-[11px] font-semibold text-red-500 flex items-center gap-1">
+                                  {row.value >= limits[row.key] && (
+                                    <span className="text-[11px] font-semibold text-red-500 flex items-center gap-1 animate-pulse">
                                       <AlertCircle className="w-3 h-3" />
-                                      Limite ultrapassado
+                                      Limite atingido
                                     </span>
                                   )}
-                                  {row.value > limits[row.key] * 0.8 && row.value <= limits[row.key] && (
+                                  {row.value >= limits[row.key] * 0.9 && row.value < limits[row.key] && (
+                                    <span className="text-[11px] font-semibold text-red-500 flex items-center gap-1">
+                                      <AlertCircle className="w-3 h-3" />
+                                      Limite próximo
+                                    </span>
+                                  )}
+                                  {row.value >= limits[row.key] * 0.6 && row.value < limits[row.key] * 0.9 && (
                                     <span className="text-[11px] font-semibold text-amber-500">
                                       {((row.value / limits[row.key]) * 100).toFixed(0)}% do limite
                                     </span>

@@ -6,6 +6,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useDemoMode } from '../../contexts/DemoContext';
+import { useHouseholdCtx } from '../../contexts/HouseholdContext';
+
+const MEMBER_COLORS = ['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#ec4899'];
+function initials(name = '') {
+  return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function brl(n) {
@@ -53,6 +59,9 @@ const itemVariants = {
 
 // ─── Modal: novo parcelamento ──────────────────────────────────────────────
 function AddInstallmentForm({ onClose, onCreated }) {
+  const hhCtx = useHouseholdCtx();
+  const householdId = hhCtx?.household?.id ?? null;
+
   const [name, setName]             = useState('');
   const [totalAmount, setTotalAmount] = useState('');
   const [count, setCount]           = useState('12');
@@ -105,6 +114,7 @@ function AddInstallmentForm({ onClose, onCreated }) {
         total_installments: parsedCount,
         paid_installments: 0,
         start_date: startDate,
+        household_id: householdId,
       })
       .select()
       .single();
@@ -319,7 +329,7 @@ function DeleteConfirmModal({ installment, onConfirm, onCancel, deleting }) {
 }
 
 // ─── Card de parcelamento ──────────────────────────────────────────────────
-function InstallmentRow({ inst, onDelete, onMarkPaid }) {
+function InstallmentRow({ inst, onDelete, onMarkPaid, members = [] }) {
   const active = isActive(inst);
   const dueThisMonth = active && isInCurrentMonth(nextDueDate(inst));
   const remaining = (inst.total_installments - inst.paid_installments) * Number(inst.installment_amount);
@@ -341,6 +351,20 @@ function InstallmentRow({ inst, onDelete, onMarkPaid }) {
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
+            {members.length > 1 && inst.user_id && (() => {
+              const idx = members.findIndex((m) => m.user_id === inst.user_id);
+              const m = members[idx] ?? null;
+              if (!m) return null;
+              return (
+                <span
+                  title={m.nickname}
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                  style={{ background: MEMBER_COLORS[idx % MEMBER_COLORS.length] }}
+                >
+                  {initials(m.nickname)}
+                </span>
+              );
+            })()}
             <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{inst.name}</p>
             {!active && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">
@@ -417,6 +441,8 @@ function InstallmentRow({ inst, onDelete, onMarkPaid }) {
 // ─── Componente principal ──────────────────────────────────────────────────
 export function InstallmentsTab() {
   const { isDemo, demoData, showDemoBlock } = useDemoMode();
+  const hhCtx = useHouseholdCtx();
+  const members = hhCtx?.members ?? [];
 
   const [installments, setInstallments] = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -443,7 +469,7 @@ export function InstallmentsTab() {
 
       const { data, error } = await supabase
         .from('installments')
-        .select('id, name, total_amount, installment_amount, total_installments, paid_installments, start_date, created_at')
+        .select('id, name, total_amount, installment_amount, total_installments, paid_installments, start_date, created_at, user_id')
         .order('start_date', { ascending: false });
 
       if (cancelled) return;
@@ -641,6 +667,7 @@ export function InstallmentsTab() {
               <InstallmentRow
                 key={inst.id}
                 inst={inst}
+                members={members}
                 onDelete={setPendingDelete}
                 onMarkPaid={handleMarkPaid}
               />

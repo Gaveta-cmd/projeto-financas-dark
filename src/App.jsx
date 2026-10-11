@@ -14,10 +14,8 @@ import { SupportChat } from './components/SupportChat';
 import { DemoBanner } from './components/DemoBanner';
 import { DemoBlockModal } from './components/DemoBlockModal';
 import { ResetPassword } from './components/ResetPassword';
-import { OnboardingModal } from './components/OnboardingModal';
 import { useDemoMode } from './contexts/DemoContext';
 import { HouseholdProvider, useHouseholdCtx } from './contexts/HouseholdContext';
-import { useOnboarding } from './hooks/useOnboarding';
 import { DEMO_DATA, DEMO_SESSION } from './data/demoData';
 import { LandingPage } from './pages/LandingPage';
 import { HouseholdSetup } from './components/HouseholdSetup';
@@ -60,9 +58,8 @@ const pageVariants = {
 function App() {
   const { isDemo, enterDemo, exitDemo, blockVisible, hideDemoBlock } = useDemoMode();
 
-  const [session,            setSession]            = useState(undefined);
-  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
-  const [showResetPassword,  setShowResetPassword]  = useState(false);
+  const [session,           setSession]           = useState(undefined);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [showLanding,        setShowLanding]        = useState(true);
   const [loginMode,          setLoginMode]          = useState('signin');
   const [activeTab,          setActiveTab]          = useState('dashboard');
@@ -173,21 +170,6 @@ function App() {
 
   // In demo mode, show app with fake session; otherwise use real session
   const activeSession = isDemo ? DEMO_SESSION : session;
-
-  const { completed: onboardingCompleted, loading: onboardingLoading, saveOnboarding } =
-    useOnboarding(activeSession?.user?.id);
-
-  // Reset dismissed state when a new user logs in
-  useEffect(() => {
-    if (session?.user?.id) setOnboardingDismissed(false);
-  }, [session?.user?.id]);
-
-  const showOnboarding =
-    Boolean(activeSession) && !isDemo && !onboardingLoading && !onboardingCompleted && !onboardingDismissed;
-
-  async function handleOnboardingComplete(data) {
-    await saveOnboarding(data);
-  }
 
   if (showResetPassword) {
     return (
@@ -314,19 +296,9 @@ function App() {
             onCreateAccount={() => { hideDemoBlock(); exitDemo(); }}
           />
 
-          {/* Questionário pós-cadastro */}
+          {/* Setup de household para quem ainda não tem grupo */}
           <AnimatePresence>
-            {showOnboarding && (
-              <OnboardingModal
-                onComplete={handleOnboardingComplete}
-                onSkip={() => setOnboardingDismissed(true)}
-              />
-            )}
-          </AnimatePresence>
-
-          {/* Setup de household para quem completou o onboarding mas ainda não tem grupo */}
-          <AnimatePresence>
-            {!showOnboarding && !isDemo && onboardingCompleted && (
+            {!isDemo && (
               <HouseholdGuard userId={activeSession?.user?.id} />
             )}
           </AnimatePresence>

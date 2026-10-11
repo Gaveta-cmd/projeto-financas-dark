@@ -4,9 +4,10 @@ import { useHouseholdCtx } from '../contexts/HouseholdContext';
 
 export function useCards() {
   const ctx = useHouseholdCtx();
-  const cards      = ctx?.cards ?? [];
-  const household  = ctx?.household;
+  const cards        = ctx?.cards ?? [];
+  const household    = ctx?.household;
   const refreshCards = ctx?.refreshCards;
+  const userId       = ctx?.userId;
 
   // Cartões apenas do usuário logado
   const getUserCards = useCallback((userId) =>
@@ -44,12 +45,13 @@ export function useCards() {
     if (!supabase || !household?.id) return { error: 'Sem household' };
     const { data, error } = await supabase
       .from('cards')
-      .insert({ ...payload, household_id: household.id })
+      .insert({ ...payload, household_id: household.id, user_id: userId })
       .select()
       .single();
-    if (!error) await refreshCards();
+    if (error) console.error('addCard error:', error);
+    else await refreshCards();
     return { data, error };
-  }, [household?.id, refreshCards]);
+  }, [household?.id, userId, refreshCards]);
 
   const updateCard = useCallback(async (id, payload) => {
     if (!supabase) return { error: 'Sem supabase' };

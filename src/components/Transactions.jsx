@@ -434,11 +434,20 @@ function TransactionRow({ tx, onDelete }) {
 }
 
 // ─── Componente principal ───────────────────────────────────────────────────
+const MEMBER_COLORS = ['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#ec4899'];
+
+function initials(name = '') {
+  return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+}
+
 export function Transactions() {
   const { isDemo, demoData, showDemoBlock } = useDemoMode();
+  const hhCtx = useHouseholdCtx();
+  const members = hhCtx?.members ?? [];
 
   const [transactions, setTransactions]   = useState([]);
   const [loading, setLoading]             = useState(true);
+  const [selectedMember, setSelectedMember] = useState('all');
   const [loadError, setLoadError]         = useState('');
   const [showAdd, setShowAdd]             = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
@@ -486,7 +495,7 @@ export function Transactions() {
 
       const { data, error } = await supabase
         .from('transactions')
-        .select('id, title, amount, category, type, date, created_at')
+        .select('id, title, amount, category, type, date, created_at, user_id')
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
 
@@ -530,15 +539,21 @@ export function Transactions() {
     setDeleting(false);
   };
 
+  const filteredTransactions = useMemo(() =>
+    selectedMember === 'all'
+      ? transactions
+      : transactions.filter((t) => t.user_id === selectedMember),
+  [transactions, selectedMember]);
+
   const totals = useMemo(() => {
     let income = 0, expense = 0;
-    for (const t of transactions) {
+    for (const t of filteredTransactions) {
       const v = Number(t.amount);
       if (t.type === 'income') income += v;
       else expense += v;
     }
     return { income, expense, balance: income - expense };
-  }, [transactions]);
+  }, [filteredTransactions]);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -653,6 +668,42 @@ export function Transactions() {
         </motion.div>
       )}
 
+      {/* Filtro por membro */}
+      {members.length > 1 && (
+        <div className="flex items-center gap-2 mb-5 flex-wrap">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Membro:</span>
+          <button
+            onClick={() => setSelectedMember('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+              selectedMember === 'all'
+                ? 'bg-accent text-white border-accent'
+                : 'bg-white dark:bg-dark-surface border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-300 hover:border-accent/40'
+            }`}
+          >
+            Todos
+          </button>
+          {members.map((m, i) => (
+            <button
+              key={m.user_id}
+              onClick={() => setSelectedMember(m.user_id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                selectedMember === m.user_id
+                  ? 'bg-accent text-white border-accent'
+                  : 'bg-white dark:bg-dark-surface border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-300 hover:border-accent/40'
+              }`}
+            >
+              <span
+                className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                style={{ background: MEMBER_COLORS[i % MEMBER_COLORS.length] }}
+              >
+                {initials(m.nickname)}
+              </span>
+              {m.nickname || 'Membro'}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Lista */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -692,7 +743,7 @@ export function Transactions() {
           className="flex flex-col gap-2.5"
         >
           <AnimatePresence initial={false}>
-            {transactions.map((tx) => (
+            {filteredTransactions.map((tx) => (
               <TransactionRow
                 key={tx.id}
                 tx={tx}

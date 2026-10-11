@@ -4,6 +4,12 @@ import {
   Settings, Sliders, Lock, AlertTriangle, MessageCircle, X, FlaskConical,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useHouseholdCtx } from '../contexts/HouseholdContext';
+
+const MEMBER_COLORS = ['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#ec4899'];
+function initials(name = '') {
+  return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+}
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -38,6 +44,11 @@ const SETTINGS_IDS = SETTINGS_MENU.flatMap(s => s.items.map(i => i.id));
 export function Header({ activeTab = 'dashboard', onTabChange, onLogout, isDemo }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const isSettingsActive = SETTINGS_IDS.includes(activeTab);
+  const hhCtx = useHouseholdCtx();
+  const members = hhCtx?.members ?? [];
+  const selectedMember = hhCtx?.selectedMember ?? 'all';
+  const setSelectedMember = hhCtx?.setSelectedMember;
+  const showFilter = members.length > 1;
 
   const handleSettingsPick = (id) => {
     onTabChange?.(id);
@@ -120,6 +131,48 @@ export function Header({ activeTab = 'dashboard', onTabChange, onLogout, isDemo 
             </motion.button>
           </div>
         </div>
+
+        {/* ── Global member filter pills ── */}
+        {showFilter && (
+          <div className="relative z-10 flex items-center gap-2 px-6 pb-3 overflow-x-auto">
+            <button
+              onClick={() => setSelectedMember?.('all')}
+              className={
+                'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all whitespace-nowrap ' +
+                (selectedMember === 'all'
+                  ? 'bg-gray-800 text-white border-gray-700 dark:bg-white dark:text-gray-900 dark:border-white'
+                  : 'bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-gray-400 border-gray-200 dark:border-dark-border hover:border-gray-400')
+              }
+            >
+              Todos
+            </button>
+            {members.map((m, i) => {
+              const color = MEMBER_COLORS[i % MEMBER_COLORS.length];
+              const active = selectedMember === m.user_id;
+              return (
+                <button
+                  key={m.user_id}
+                  onClick={() => setSelectedMember?.(m.user_id)}
+                  className={
+                    'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all whitespace-nowrap ' +
+                    (active
+                      ? 'text-white border-transparent'
+                      : 'bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-gray-400 border-gray-200 dark:border-dark-border hover:border-gray-400')
+                  }
+                  style={active ? { background: color, borderColor: color } : {}}
+                >
+                  <span
+                    className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                    style={{ background: active ? 'rgba(255,255,255,0.3)' : color }}
+                  >
+                    {initials(m.nickname || m.full_name || '')}
+                  </span>
+                  {m.nickname || m.full_name || 'Membro'}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </motion.header>
 
       {/* ── Mobile bottom tab bar — visible only on small screens ── */}

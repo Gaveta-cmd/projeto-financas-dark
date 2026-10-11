@@ -6,6 +6,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useDemoMode } from '../../contexts/DemoContext';
+import { useHouseholdCtx } from '../../contexts/HouseholdContext';
+
+const MEMBER_COLORS = ['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#ec4899'];
+function initials(name = '') {
+  return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+}
 
 // Traduz erros comuns do Postgres/Supabase para algo acionável.
 function formatSupabaseError(err) {
@@ -81,6 +87,9 @@ const itemVariants = {
 
 // ─── Modal: nova assinatura ────────────────────────────────────────────────
 function AddSubscriptionForm({ onClose, onCreated }) {
+  const hhCtx = useHouseholdCtx();
+  const householdId = hhCtx?.household?.id ?? null;
+
   const [name, setName]         = useState('');
   const [amount, setAmount]     = useState('');
   const [cycle, setCycle]       = useState('monthly');
@@ -121,6 +130,7 @@ function AddSubscriptionForm({ onClose, onCreated }) {
         category,
         color,
         next_billing_date: date,
+        household_id: householdId,
       })
       .select()
       .single();
@@ -381,7 +391,7 @@ function DeleteConfirmModal({ subscription, onConfirm, onCancel, deleting }) {
 }
 
 // ─── Card de assinatura ────────────────────────────────────────────────────
-function SubscriptionRow({ sub, onDelete }) {
+function SubscriptionRow({ sub, onDelete, members = [] }) {
   const cat = CATEGORY_BY_KEY[sub.category] ?? CATEGORY_BY_KEY.outros;
   const Icon = cat.icon;
   const days = daysUntil(sub.next_billing_date);
@@ -409,6 +419,20 @@ function SubscriptionRow({ sub, onDelete }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
+            {members.length > 1 && sub.user_id && (() => {
+              const idx = members.findIndex((m) => m.user_id === sub.user_id);
+              const m = members[idx] ?? null;
+              if (!m) return null;
+              return (
+                <span
+                  title={m.nickname}
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                  style={{ background: MEMBER_COLORS[idx % MEMBER_COLORS.length] }}
+                >
+                  {initials(m.nickname)}
+                </span>
+              );
+            })()}
             <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{sub.name}</p>
             {overdue && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-accent bg-accent/10 border border-accent/30 px-1.5 py-0.5 rounded">
@@ -460,6 +484,8 @@ function SubscriptionRow({ sub, onDelete }) {
 // ─── Componente principal ──────────────────────────────────────────────────
 export function SubscriptionsTab() {
   const { isDemo, demoData, showDemoBlock } = useDemoMode();
+  const hhCtx = useHouseholdCtx();
+  const members = hhCtx?.members ?? [];
 
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -492,7 +518,7 @@ export function SubscriptionsTab() {
 
       const { data, error } = await supabase
         .from('subscriptions')
-        .select('id, name, amount, billing_cycle, category, color, next_billing_date, created_at')
+        .select('id, name, amount, billing_cycle, category, color, next_billing_date, created_at, user_id')
         .order('next_billing_date', { ascending: true });
 
       if (cancelled) return;
@@ -674,6 +700,7 @@ export function SubscriptionsTab() {
               <SubscriptionRow
                 key={sub.id}
                 sub={sub}
+                members={members}
                 onDelete={setPendingDelete}
               />
             ))}

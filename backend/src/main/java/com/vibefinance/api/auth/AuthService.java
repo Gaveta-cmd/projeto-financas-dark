@@ -144,9 +144,14 @@ public class AuthService {
 		return getUser(userId);
 	}
 
-	/** Remove a conta; as chaves estrangeiras apagam em cascata os dados do usuário. */
+	/**
+	 * Remove a conta; as chaves estrangeiras apagam em cascata os dados do usuário. Um grupo
+	 * familiar que fica sem nenhum membro é apagado junto, para não sobrar órfão.
+	 */
+	@Transactional
 	public void deleteUser(String userId) {
 		jdbc.update("delete from users where id = ?", userId);
+		jdbc.update("delete from households where id not in (select household_id from household_members)");
 	}
 
 	private Map<String, Object> newSession(String userId) {

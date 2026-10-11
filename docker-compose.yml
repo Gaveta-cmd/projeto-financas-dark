@@ -1,6 +1,6 @@
 # Banco MySQL local do VibeFinance.
 #   docker compose up -d      sobe o banco
-#   docker compose down       para o banco (os dados ficam no volume vibefinance-mysql)
+#   docker compose down       para o banco (os dados continuam guardados no volume do Docker)
 services:
   mysql:
     image: mysql:8.4

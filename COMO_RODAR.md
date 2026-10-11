@@ -46,7 +46,7 @@ Com o site rodando, abra `http://IP-DO-PC:5173` em qualquer aparelho no mesmo Wi
 
 ## Backup
 
-Os dados ficam no volume Docker `vibefinance-mysql`. Para gerar um arquivo de backup:
+Os dados ficam no volume Docker `projeto-financas-dark_vibefinance-mysql`. Para gerar um arquivo de backup:
 
 ```bash
 docker exec vibefinance-mysql sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" vibefinance' > backup.sql

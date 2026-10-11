@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 import { useHouseholdCtx } from '../contexts/HouseholdContext';
 
 export function useHousehold() {
@@ -12,10 +12,10 @@ export function useHousehold() {
 
   // Retorna transações de todos os membros do household no mês (YYYY-MM)
   const fetchHouseholdTransactions = useCallback(async (month) => {
-    if (!ctx?.household?.id || !supabase) return [];
+    if (!ctx?.household?.id) return [];
     const start = `${month}-01`;
     const end   = `${month}-31`;
-    const { data, error } = await supabase
+    const { data, error } = await api
       .from('transactions')
       .select('*')
       .eq('household_id', ctx.household.id)

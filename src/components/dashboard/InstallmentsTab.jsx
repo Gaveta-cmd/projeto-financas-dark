@@ -4,7 +4,7 @@ import {
   Plus, Trash2, X, AlertCircle, Calendar,
   CalendarClock, CheckCircle2, Clock, Check,
 } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { api } from '../../lib/api';
 import { useDemoMode } from '../../contexts/DemoContext';
 import { useHouseholdCtx } from '../../contexts/HouseholdContext';
 
@@ -105,7 +105,7 @@ function AddInstallmentForm({ onClose, onCreated }) {
     }
 
     setSaving(true);
-    const { data, error: insertErr } = await supabase
+    const { data, error: insertErr } = await api
       .from('installments')
       .insert({
         name: name.trim().slice(0, 120),
@@ -467,7 +467,7 @@ export function InstallmentsTab() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await api
         .from('installments')
         .select('id, name, total_amount, installment_amount, total_installments, paid_installments, start_date, created_at, user_id')
         .order('start_date', { ascending: false });
@@ -501,7 +501,7 @@ export function InstallmentsTab() {
     setInstallments((prev) =>
       prev.map((x) => (x.id === inst.id ? { ...x, paid_installments: newPaid } : x))
     );
-    const { error } = await supabase
+    const { error } = await api
       .from('installments')
       .update({ paid_installments: newPaid })
       .eq('id', inst.id);
@@ -517,7 +517,7 @@ export function InstallmentsTab() {
     if (!pendingDelete) return;
     if (isDemo) { showDemoBlock(); setPendingDelete(null); return; }
     setDeleting(true);
-    const { error } = await supabase
+    const { error } = await api
       .from('installments')
       .delete()
       .eq('id', pendingDelete.id);

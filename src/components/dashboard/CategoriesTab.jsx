@@ -8,7 +8,7 @@ import {
   Tv, Zap, Repeat, CalendarClock, Trophy, X,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { supabase } from '../../lib/supabaseClient';
+import { api } from '../../lib/api';
 import { useDemoMode } from '../../contexts/DemoContext';
 import { useSpendingLimits } from '../../hooks/useSpendingLimits';
 import { useHouseholdCtx } from '../../contexts/HouseholdContext';
@@ -180,14 +180,14 @@ export function CategoriesTab() {
         loadedInsts = demoData.installments;
       } else {
         const [txRes, subRes, instRes] = await Promise.all([
-          supabase
+          api
             .from('transactions')
             .select('amount, category, type, date, title, user_id')
             .eq('type', 'expense')
             .gte('date', isoDay(previous.start))
             .lte('date', isoDay(current.end)),
-          supabase.from('subscriptions').select('id, name, amount, billing_cycle, category, color'),
-          supabase.from('installments').select('id, name, total_amount, installment_amount, total_installments, paid_installments, start_date'),
+          api.from('subscriptions').select('id, name, amount, billing_cycle, category, color'),
+          api.from('installments').select('id, name, total_amount, installment_amount, total_installments, paid_installments, start_date'),
         ]);
 
         if (cancelled) return;

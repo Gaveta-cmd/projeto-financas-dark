@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { supabase } from './lib/supabaseClient';
+import { api } from './lib/api';
 import { clearBankData } from './lib/bankSeed';
 import { Login } from './components/Login';
 import { Header } from './components/Header';
@@ -9,15 +9,11 @@ import { Dashboard } from './components/Dashboard';
 import { Profile } from './components/Profile';
 import { Preferences } from './components/Preferences';
 import { ChangePassword } from './components/ChangePassword';
-import { ReportProblem } from './components/ReportProblem';
-import { SupportChat } from './components/SupportChat';
 import { DemoBanner } from './components/DemoBanner';
 import { DemoBlockModal } from './components/DemoBlockModal';
-import { ResetPassword } from './components/ResetPassword';
 import { useDemoMode } from './contexts/DemoContext';
 import { HouseholdProvider, useHouseholdCtx } from './contexts/HouseholdContext';
 import { DEMO_DATA, DEMO_SESSION } from './data/demoData';
-import { LandingPage } from './pages/LandingPage';
 import { HouseholdSetup } from './components/HouseholdSetup';
 
 const Goals = lazy(() => import('./components/Goals').then((m) => ({ default: m.Goals })));
@@ -58,10 +54,7 @@ const pageVariants = {
 function App() {
   const { isDemo, enterDemo, exitDemo, blockVisible, hideDemoBlock } = useDemoMode();
 
-  const [session,           setSession]           = useState(undefined);
-  const [showResetPassword, setShowResetPassword] = useState(false);
-  const [showLanding,        setShowLanding]        = useState(true);
-  const [loginMode,          setLoginMode]          = useState('signin');
+  const [session,            setSession]            = useState(undefined);
   const [activeTab,          setActiveTab]          = useState('dashboard');
   const [accounts,           setAccounts]           = useState(loadAccounts);
   const [theme,              setTheme]              = useState(() => localStorage.getItem(THEME_KEY) || 'dark');
@@ -92,32 +85,15 @@ function App() {
   };
 
   useEffect(() => {
-    // Detect recovery token in URL (PKCE flow uses query param, implicit uses hash)
-    const params = new URLSearchParams(window.location.search);
-    const hash   = window.location.hash;
-    if (params.get('type') === 'recovery' || hash.includes('type=recovery')) {
-      setShowResetPassword(true);
-    }
-
-    if (!supabase) {
-      setSession(null);
-      return;
-    }
-
-    supabase.auth.getSession()
+    api.auth.getSession()
       .then(({ data, error }) => {
         if (error) { setSession(null); return; }
         setSession(data.session ?? null);
       })
       .catch(() => setSession(null));
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setShowResetPassword(true);
-        setSession(currentSession ?? null);
-      } else {
-        setSession(currentSession ?? null);
-      }
+    const { data: { subscription } } = api.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession ?? null);
     });
 
     return () => subscription.unsubscribe();
@@ -159,7 +135,7 @@ function App() {
       return;
     }
     try {
-      if (supabase) await supabase.auth.signOut({ scope: 'global' });
+      await api.auth.signOut();
     } catch { /* garante logout mesmo com erro de rede */ }
     setSession(null);
     setAccounts([]);
@@ -171,17 +147,6 @@ function App() {
   // In demo mode, show app with fake session; otherwise use real session
   const activeSession = isDemo ? DEMO_SESSION : session;
 
-  if (showResetPassword) {
-    return (
-      <ResetPassword onDone={() => {
-        setShowResetPassword(false);
-        setSession(null);
-        // Clear the recovery params from URL without reload
-        window.history.replaceState({}, '', window.location.pathname);
-      }} />
-    );
-  }
-
   if (session === undefined && !isDemo) {
     return (
       <div className="min-h-screen bg-dark-bg flex items-center justify-center">
@@ -192,17 +157,9 @@ function App() {
 
   return (
     <AnimatePresence mode="wait">
-      {!activeSession && showLanding ? (
-        <motion.div key="landing" {...pageVariants}>
-          <LandingPage
-            onLogin={() => { setLoginMode('signin'); setShowLanding(false); }}
-            onGetStarted={() => { setLoginMode('signup'); setShowLanding(false); }}
-            onDemo={enterDemo}
-          />
-        </motion.div>
-      ) : !activeSession ? (
+      {!activeSession ? (
         <motion.div key="login" {...pageVariants}>
-          <Login onLogin={setSession} onEnterDemo={enterDemo} initialMode={loginMode} onBack={() => setShowLanding(true)} />
+          <Login onLogin={setSession} onEnterDemo={enterDemo} />
         </motion.div>
       ) : (
         <HouseholdProvider userId={activeSession?.user?.id}>
@@ -274,16 +231,6 @@ function App() {
                     session={activeSession}
                     onCancel={() => setActiveTab('dashboard')}
                   />
-                </motion.div>
-              )}
-              {activeTab === 'report-problem' && (
-                <motion.div key="report-problem" {...pageVariants}>
-                  <ReportProblem />
-                </motion.div>
-              )}
-              {activeTab === 'support-chat' && (
-                <motion.div key="support-chat" {...pageVariants}>
-                  <SupportChat />
                 </motion.div>
               )}
             </AnimatePresence>

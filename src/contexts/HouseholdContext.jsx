@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 
 const HouseholdContext = createContext(null);
 
@@ -12,13 +12,13 @@ export function HouseholdProvider({ userId, children }) {
   const [selectedMember,  setSelectedMember] = useState('all'); // 'all' | user_id
 
   const refresh = useCallback(async () => {
-    if (!userId || !supabase) {
+    if (!userId) {
       setLoading(false);
       return;
     }
 
     // Busca profile para pegar household_id
-    const { data: profile } = await supabase
+    const { data: profile } = await api
       .from('profiles')
       .select('household_id, full_name')
       .eq('id', userId)
@@ -36,9 +36,9 @@ export function HouseholdProvider({ userId, children }) {
     const hid = profile.household_id;
 
     const [hhRes, membersRes, cardsRes] = await Promise.all([
-      supabase.from('households').select('*').eq('id', hid).maybeSingle(),
-      supabase.from('household_members').select('*').eq('household_id', hid),
-      supabase.from('cards').select('*').eq('household_id', hid).order('created_at', { ascending: true }),
+      api.from('households').select('*').eq('id', hid).maybeSingle(),
+      api.from('household_members').select('*').eq('household_id', hid),
+      api.from('cards').select('*').eq('household_id', hid).order('created_at', { ascending: true }),
     ]);
 
     setHousehold(hhRes.data ?? null);
@@ -51,8 +51,8 @@ export function HouseholdProvider({ userId, children }) {
   useEffect(() => { refresh(); }, [refresh]);
 
   const refreshCards = useCallback(async () => {
-    if (!household?.id || !supabase) return;
-    const { data } = await supabase
+    if (!household?.id) return;
+    const { data } = await api
       .from('cards')
       .select('*')
       .eq('household_id', household.id)

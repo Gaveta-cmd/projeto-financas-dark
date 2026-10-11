@@ -5,7 +5,7 @@ import {
   Plane, ShieldAlert, Smartphone, Car, Home, MoreHorizontal,
   CheckCircle2, TrendingUp, Wallet, Trophy, Sparkles,
 } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 import { useDemoMode } from '../contexts/DemoContext';
 
 // Traduz erros comuns do Postgres/Supabase para algo acionável.
@@ -137,7 +137,7 @@ function AddGoalForm({ onClose, onCreated }) {
     }
 
     setSaving(true);
-    const { data, error: insertErr } = await supabase
+    const { data, error: insertErr } = await api
       .from('goals')
       .insert({
         name: name.trim().slice(0, 80),
@@ -376,7 +376,7 @@ function AddDepositModal({ goal, onClose, onSaved }) {
     // Aporte em meta = transação real (categoria 'metas'). Faz primeiro
     // o insert da transação porque, se ele falhar (ex.: tabela sem a
     // categoria nova ainda, RLS, etc), a gente aborta sem mexer na meta.
-    const { error: txErr } = await supabase
+    const { error: txErr } = await api
       .from('transactions')
       .insert({
         title: `Meta: ${goal.name}`.slice(0, 120),
@@ -397,7 +397,7 @@ function AddDepositModal({ goal, onClose, onSaved }) {
       return;
     }
 
-    const { data, error: updateErr } = await supabase
+    const { data, error: updateErr } = await api
       .from('goals')
       .update({ current_amount: newCurrent })
       .eq('id', goal.id)
@@ -858,7 +858,7 @@ export function Goals() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await api
         .from('goals')
         .select('id, name, target_amount, current_amount, deadline, category, color, created_at')
         .order('deadline', { ascending: true });
@@ -904,7 +904,7 @@ export function Goals() {
     setCelebratingId(conquered.id);
     setPendingComplete(null);
 
-    const { error } = await supabase
+    const { error } = await api
       .from('goals')
       .delete()
       .eq('id', conquered.id);
@@ -931,7 +931,7 @@ export function Goals() {
     if (isDemo) { showDemoBlock(); setPendingDelete(null); return; }
     setDeleting(true);
     const removed = pendingDelete;
-    const { error } = await supabase
+    const { error } = await api
       .from('goals')
       .delete()
       .eq('id', pendingDelete.id);

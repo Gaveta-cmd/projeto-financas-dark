@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 import { useDemoMode } from '../contexts/DemoContext';
 import { validatePassword, passwordStrengthLabel } from '../utils/passwordStrength';
 
@@ -51,7 +51,7 @@ export function ChangePassword({ session, onCancel }) {
     setLoading(true);
 
     // Verifica senha atual re-autenticando
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await api.auth.signInWithPassword({
       email: session.user.email,
       password: currentPassword,
     });
@@ -64,7 +64,7 @@ export function ChangePassword({ session, onCancel }) {
     }
 
     // Atualiza para a nova senha
-    const { error: updateError } = await supabase.auth.updateUser({
+    const { error: updateError } = await api.auth.updateUser({
       password: newPassword,
     });
 

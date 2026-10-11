@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 import { useDemoMode } from '../contexts/DemoContext';
 
 export function useEmergencyReserve() {
@@ -36,12 +36,12 @@ export function useEmergencyReserve() {
       const fromDate = sixMonthsAgo.toISOString().split('T')[0];
 
       const [txRes, goalsRes] = await Promise.all([
-        supabase
+        api
           .from('transactions')
           .select('amount, date')
           .eq('type', 'expense')
           .gte('date', fromDate),
-        supabase
+        api
           .from('goals')
           .select('id, name, target_amount, current_amount, color')
           .ilike('name', '%reserva%emergên%'),

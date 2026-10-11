@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 import { validatePassword, passwordStrengthLabel } from '../utils/passwordStrength';
 import {
   Mail, Lock, User, Calendar, CheckSquare, Square,
@@ -14,7 +14,8 @@ function mapAuthError(msg = '') {
   if (msg.includes('Invalid login credentials'))   return 'E-mail ou senha incorretos.';
   if (msg.includes('Email not confirmed'))          return 'Confirme seu e-mail antes de fazer login.';
   if (msg.includes('User already registered'))      return 'Este e-mail já está cadastrado.';
-  if (msg.includes('rate limit') || msg.includes('Rate limit')) return 'Muitas tentativas. Aguarde alguns minutos.';
+  if (msg.includes('cadastro de novos usuários'))   return 'O cadastro de novos usuários está desativado.';
+  if (msg.includes('conectar ao servidor'))         return 'Não foi possível conectar ao servidor. Verifique se a API está rodando.';
   if (msg.includes('Unable to validate email'))     return 'Endereço de e-mail inválido.';
   if (msg.includes('Password should be') || msg.includes('password')) return 'A senha deve ter no mínimo 8 caracteres.';
   return 'Ocorreu um erro. Tente novamente.';
@@ -31,10 +32,6 @@ export function Login({ onLogin, onEnterDemo, initialMode = 'signin', onBack }) 
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState(null);
   const [success,      setSuccess]      = useState(null);
-
-  // Reset e-mail para recuperação de senha
-  const [resetEmail,   setResetEmail]   = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
 
   // Carrega e-mail salvo ao montar
   useEffect(() => {
@@ -62,13 +59,13 @@ export function Login({ onLogin, onEnterDemo, initialMode = 'signin', onBack }) 
 
     try {
       if (mode === 'signin') {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await api.auth.signInWithPassword({ email, password });
         if (error) throw error;
         if (rememberMe) sessionStorage.setItem(REMEMBER_KEY, email);
         else sessionStorage.removeItem(REMEMBER_KEY);
         onLogin(data.session);
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await api.auth.signUp({
           email,
           password,
           options: {
@@ -76,32 +73,12 @@ export function Login({ onLogin, onEnterDemo, initialMode = 'signin', onBack }) 
           },
         });
         if (error) throw error;
-        setSuccess('Conta criada! Verifique seu e-mail para confirmar o cadastro.');
-        setMode('signin');
+        onLogin(data.session);
       }
     } catch (err) {
       setError(mapAuthError(err.message));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    if (!resetEmail.trim()) { setError('Informe seu e-mail.'); return; }
-    setResetLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
-      setSuccess('Enviamos um link de redefinição para seu email.');
-    } catch (err) {
-      setError(mapAuthError(err.message));
-    } finally {
-      setResetLoading(false);
     }
   };
 
@@ -190,50 +167,10 @@ export function Login({ onLogin, onEnterDemo, initialMode = 'signin', onBack }) 
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
               >
-                <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
-                  <p className="text-gray-400 text-sm mb-2">
-                    Informe seu e-mail cadastrado e enviaremos um link para redefinir sua senha.
-                  </p>
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-accent transition-colors pointer-events-none" />
-                    <input
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={resetEmail}
-                      onChange={e => setResetEmail(e.target.value)}
-                      required
-                      autoComplete="email"
-                      className="w-full bg-dark-bg border border-dark-border rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/30 transition-all"
-                    />
-                  </div>
-
-                  <AnimatePresence mode="wait">
-                    {error && (
-                      <motion.div key="err" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        className="flex items-center gap-2.5 bg-accent/10 border border-accent/30 rounded-xl px-4 py-3"
-                      >
-                        <AlertCircle className="w-4 h-4 text-accent shrink-0" />
-                        <p className="text-accent text-sm">{error}</p>
-                      </motion.div>
-                    )}
-                    {success && (
-                      <motion.div key="ok" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3"
-                      >
-                        <p className="text-emerald-400 text-sm">{success}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <motion.button
-                    type="submit"
-                    disabled={resetLoading}
-                    whileTap={{ scale: 0.98 }}
-                    className="mt-2 w-full bg-accent hover:bg-accent/90 disabled:opacity-50 text-white font-heading font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_#ef233c40]"
-                  >
-                    {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Mail className="w-4 h-4" />Enviar link</>}
-                  </motion.button>
-                </form>
+                <p className="text-gray-400 text-sm">
+                  Esta instalação roda em casa e não envia e-mails. Para redefinir a senha,
+                  fale com quem administra o VibeFinance da família.
+                </p>
 
                 <button
                   onClick={() => { setMode('signin'); setError(null); setSuccess(null); }}
@@ -361,7 +298,7 @@ export function Login({ onLogin, onEnterDemo, initialMode = 'signin', onBack }) 
                 <div className="mt-3 text-center">
                   <button
                     type="button"
-                    onClick={() => { setMode('forgot'); setError(null); setSuccess(null); setResetEmail(email); }}
+                    onClick={() => { setMode('forgot'); setError(null); setSuccess(null); }}
                     className="text-gray-500 hover:text-gray-300 text-sm transition-colors"
                   >
                     Esqueceu sua senha?

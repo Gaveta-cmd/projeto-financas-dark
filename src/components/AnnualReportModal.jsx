@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, FileText, AlertCircle } from 'lucide-react';
 import { exportAnnualReport } from '../lib/pdfExport';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 
 function defaultDates() {
   const year = new Date().getFullYear();
@@ -44,9 +44,9 @@ export function AnnualReportModal({ open, onClose, transactions, userName, isDem
         goals         = demoData?.goals         ?? [];
       } else {
         const [instRes, subRes, goalRes] = await Promise.allSettled([
-          supabase.from('installments').select('*'),
-          supabase.from('subscriptions').select('*'),
-          supabase.from('goals').select('*'),
+          api.from('installments').select('*'),
+          api.from('subscriptions').select('*'),
+          api.from('goals').select('*'),
         ]);
         if (instRes.status  === 'fulfilled' && !instRes.value.error)  installments  = instRes.value.data  ?? [];
         if (subRes.status   === 'fulfilled' && !subRes.value.error)   subscriptions = subRes.value.data   ?? [];

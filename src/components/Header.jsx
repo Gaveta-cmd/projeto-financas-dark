@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Wallet, Bell, User, LogOut, LayoutDashboard, Target,
-  Settings, Sliders, Lock, AlertTriangle, MessageCircle, X, FlaskConical,
+  Settings, Sliders, Lock, X, FlaskConical,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHouseholdCtx } from '../contexts/HouseholdContext';
@@ -28,13 +28,6 @@ const SETTINGS_MENU = [
     section: 'Segurança',
     items: [
       { id: 'change-password', label: 'Alterar Senha', icon: Lock },
-    ],
-  },
-  {
-    section: 'Suporte',
-    items: [
-      { id: 'report-problem', label: 'Reportar um Problema', icon: AlertTriangle },
-      { id: 'support-chat',   label: 'Falar com o Suporte',   icon: MessageCircle },
     ],
   },
 ];

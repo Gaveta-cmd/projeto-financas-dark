@@ -4,7 +4,7 @@ import {
   Plus, Trash2, X, Repeat, AlertCircle, Calendar, Clock,
   Tv, Heart, Briefcase, GraduationCap, MoreHorizontal, CheckCircle2,
 } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { api } from '../../lib/api';
 import { useDemoMode } from '../../contexts/DemoContext';
 import { useHouseholdCtx } from '../../contexts/HouseholdContext';
 
@@ -121,7 +121,7 @@ function AddSubscriptionForm({ onClose, onCreated }) {
     }
 
     setSaving(true);
-    const { data, error: insertErr } = await supabase
+    const { data, error: insertErr } = await api
       .from('subscriptions')
       .insert({
         name: name.trim().slice(0, 80),
@@ -516,7 +516,7 @@ export function SubscriptionsTab() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await api
         .from('subscriptions')
         .select('id, name, amount, billing_cycle, category, color, next_billing_date, created_at, user_id')
         .order('next_billing_date', { ascending: true });
@@ -548,7 +548,7 @@ export function SubscriptionsTab() {
     if (isDemo) { showDemoBlock(); setPendingDelete(null); return; }
     setDeleting(true);
     const removed = pendingDelete;
-    const { error } = await supabase
+    const { error } = await api
       .from('subscriptions')
       .delete()
       .eq('id', pendingDelete.id);

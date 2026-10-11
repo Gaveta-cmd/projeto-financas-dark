@@ -4,7 +4,7 @@ import {
   User, Mail, Phone, Trash2, Save,
   AlertTriangle, CheckCircle, Info, ChevronDown, Loader2,
 } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 import { Card } from './Card';
 import { Button } from './Button';
 import { useDemoMode } from '../contexts/DemoContext';
@@ -98,7 +98,7 @@ export function Profile({ session, onLogout }) {
       setNome(user?.user_metadata?.full_name ?? '');
       setDataNascimento(user?.user_metadata?.birth_date ?? '');
 
-      const { data, error } = await supabase
+      const { data, error } = await api
         .from('profiles')
         .select('full_name, birth_date, whatsapp')
         .eq('id', user?.id)
@@ -124,11 +124,11 @@ export function Profile({ session, onLogout }) {
     setSaveStatus(null);
     setSaveMsg('');
 
-    const { error: authErr } = await supabase.auth.updateUser({
+    const { error: authErr } = await api.auth.updateUser({
       data: { full_name: nome, birth_date: dataNascimento },
     });
 
-    const { error: profileErr } = await supabase
+    const { error: profileErr } = await api
       .from('profiles')
       .upsert({ id: user?.id, full_name: nome, birth_date: dataNascimento });
 
@@ -160,7 +160,7 @@ export function Profile({ session, onLogout }) {
       return;
     }
 
-    const { error: whatsappErr } = await supabase
+    const { error: whatsappErr } = await api
       .from('profiles')
       .upsert({ id: user?.id, whatsapp: fullNumber });
 
@@ -172,21 +172,17 @@ export function Profile({ session, onLogout }) {
     }
 
     if (email.trim() !== originalEmail) {
-      const { error: emailErr } = await supabase.auth.updateUser({ email: email.trim() });
+      const { error: emailErr } = await api.auth.updateUser({ email: email.trim() });
       if (emailErr) {
         setContactStatus('error');
         setContactMsg('Erro ao atualizar e-mail. Verifique o endereço e tente novamente.');
         setSavingContact(false);
         return;
       }
-      setContactStatus('email_pending');
-      setContactMsg(
-        `Um link de confirmação foi enviado para ${email.trim()}. Acesse o e-mail para concluir a alteração.`
-      );
-    } else {
-      setContactStatus('success');
-      setTimeout(() => setContactStatus(null), 3500);
+      setOriginalEmail(email.trim());
     }
+    setContactStatus('success');
+    setTimeout(() => setContactStatus(null), 3500);
 
     setSavingContact(false);
   };
@@ -196,12 +192,12 @@ export function Profile({ session, onLogout }) {
     setDeleting(true);
     setDeleteError('');
 
-    const { error } = await supabase.rpc('delete_user');
+    const { error } = await api.rpc('delete_user');
     if (error) {
       setDeleteError(error.message);
       setDeleting(false);
     } else {
-      await supabase.auth.signOut({ scope: 'global' });
+      await api.auth.signOut();
       onLogout();
     }
   };

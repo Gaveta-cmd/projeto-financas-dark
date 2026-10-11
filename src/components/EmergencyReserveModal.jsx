@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Shield } from 'lucide-react';
 import { Button } from './Button';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 
 function brl(n) {
   return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -24,11 +24,11 @@ export function EmergencyReserveModal({ targetAmount, onClose, onCreated }) {
       setSaving(true);
       setError('');
 
-      const { data: authData } = await supabase.auth.getUser();
+      const { data: authData } = await api.auth.getUser();
       const user = authData?.user;
       if (!user) { setError('Sessão expirada. Faça login novamente.'); return; }
 
-      const { error: err } = await supabase.from('goals').insert({
+      const { error: err } = await api.from('goals').insert({
         user_id:        user.id,
         name:           'Reserva de Emergência',
         target_amount:  Math.max(Number(targetAmount), 0.01),

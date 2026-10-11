@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, LayoutDashboard, Target,
   Settings, User, Sliders,
-  Lock, AlertTriangle, MessageCircle,
+  Lock,
   LogOut, ChevronLeft, FlaskConical,
 } from 'lucide-react';
 
@@ -24,13 +24,6 @@ const SETTINGS_MENU = [
     section: 'Segurança',
     items: [
       { id: 'change-password', label: 'Alterar Senha', icon: Lock },
-    ],
-  },
-  {
-    section: 'Suporte',
-    items: [
-      { id: 'report-problem', label: 'Reportar um Problema', icon: AlertTriangle },
-      { id: 'support-chat',   label: 'Falar com o Suporte',   icon: MessageCircle },
     ],
   },
 ];

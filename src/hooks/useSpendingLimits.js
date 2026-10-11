@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 import { useHouseholdCtx } from '../contexts/HouseholdContext';
 
 export function useSpendingLimits() {
@@ -14,7 +14,7 @@ export function useSpendingLimits() {
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await api
         .from('spending_limits')
         .select('category, monthly_limit, scope, user_id, household_id');
       if (!cancelled && data) {
@@ -41,7 +41,7 @@ export function useSpendingLimits() {
   const saveLimit = useCallback(async (category, value, scope = 'personal') => {
     const limit = Number(value);
     if (!limit || limit <= 0) return 'Valor inválido';
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData } = await api.auth.getUser();
     const user = authData?.user;
     if (!user) return 'Não autenticado';
 
@@ -50,7 +50,7 @@ export function useSpendingLimits() {
         ? { household_id: householdId, category, monthly_limit: limit, scope, user_id: null }
         : { user_id: user.id, category, monthly_limit: limit, scope: 'personal', household_id: null };
 
-    const { error } = await supabase
+    const { error } = await api
       .from('spending_limits')
       .upsert(payload, { onConflict: 'user_id,household_id,category,scope' });
 

@@ -10,7 +10,7 @@ import { Card } from '../Card';
 import { Button } from '../Button';
 import { MonthlyExpensesChart } from '../MonthlyExpensesChart';
 import { EmergencyReserveModal } from '../EmergencyReserveModal';
-import { supabase } from '../../lib/supabaseClient';
+import { api } from '../../lib/api';
 import { backfillMissingLazer } from '../../lib/bankSeed';
 import { useDemoMode } from '../../contexts/DemoContext';
 import { useEmergencyReserve } from '../../hooks/useEmergencyReserve';
@@ -250,15 +250,15 @@ export function OverviewTab({ accounts = [], onGoToTransactions, onGoToGoals, on
       // bloqueia a página, as outras caem para 0/[] sem alarde (ex.: cards
       // ainda não tem migration aplicada).
       const [txRes, subRes, insRes, cardRes, goalsRes] = await Promise.all([
-        supabase
+        api
           .from('transactions')
           .select('id, title, amount, category, type, date, created_at')
           .order('date', { ascending: false })
           .order('created_at', { ascending: false }),
-        supabase.from('subscriptions').select('amount, billing_cycle'),
-        supabase.from('installments').select('installment_amount, paid_installments, total_installments'),
-        supabase.from('cards').select('used_amount'),
-        supabase
+        api.from('subscriptions').select('amount, billing_cycle'),
+        api.from('installments').select('installment_amount, paid_installments, total_installments'),
+        api.from('cards').select('used_amount'),
+        api
           .from('goals')
           .select('id, name, target_amount, current_amount, deadline, color')
           .order('deadline', { ascending: true }),

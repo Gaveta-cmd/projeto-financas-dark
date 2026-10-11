@@ -1,0 +1,30 @@
+# Banco MySQL local do VibeFinance.
+#   docker compose up -d      sobe o banco
+#   docker compose down       para o banco (os dados ficam no volume vibefinance-mysql)
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: vibefinance-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-vibefinance}
+      MYSQL_USER: ${DB_USER:-vibefinance}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no arquivo .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?defina DB_ROOT_PASSWORD no arquivo .env}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    ports:
+      # Só a própria máquina acessa o banco; a rede de casa fala apenas com o app.
+      - "127.0.0.1:${DB_PORT:-3306}:3306"
+    volumes:
+      - vibefinance-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  vibefinance-mysql:

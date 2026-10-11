@@ -31,7 +31,7 @@
 // Pré-requisito: migration 20260511050000_bank_source.sql aplicada.
 // =====================================================================
 
-import { supabase } from './supabaseClient';
+import { api } from './api';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function isoDay(d) {
@@ -257,7 +257,7 @@ async function filterNewTransactions(items) {
   const candidateMonths = new Set(items.map((t) => monthOf(t.date)));
   const earliest = [...candidateMonths].sort()[0] + '-01';
 
-  const { data: existing, error } = await supabase
+  const { data: existing, error } = await api
     .from('transactions')
     .select('title, date')
     .gte('date', earliest);
@@ -274,7 +274,7 @@ async function filterNewTransactions(items) {
 // nomes únicos por natureza — "Netflix" é "Netflix" venha de onde vier).
 async function filterNewByName(table, items) {
   if (items.length === 0) return items;
-  const { data: existing, error } = await supabase.from(table).select('name');
+  const { data: existing, error } = await api.from(table).select('name');
   if (error || !existing) return items;
   const taken = new Set(existing.map((r) => r.name));
   return items.filter((i) => !taken.has(i.name));
@@ -300,9 +300,9 @@ export async function seedBankData(bank) {
   // chamada e devolve um "sucesso vazio" pra manter o shape do retorno.
   const noopOk = Promise.resolve({ error: null });
   const [txRes, subRes, insRes] = await Promise.all([
-    txItems.length  ? supabase.from('transactions').insert(txItems)   : noopOk,
-    subItems.length ? supabase.from('subscriptions').insert(subItems) : noopOk,
-    insItems.length ? supabase.from('installments').insert(insItems)  : noopOk,
+    txItems.length  ? api.from('transactions').insert(txItems)   : noopOk,
+    subItems.length ? api.from('subscriptions').insert(subItems) : noopOk,
+    insItems.length ? api.from('installments').insert(insItems)  : noopOk,
   ]);
 
   return {
@@ -326,9 +326,9 @@ export async function seedBankData(bank) {
  */
 export async function clearBankData(bank) {
   await Promise.all([
-    supabase.from('transactions').delete().eq('bank_source', bank.id),
-    supabase.from('subscriptions').delete().eq('bank_source', bank.id),
-    supabase.from('installments').delete().eq('bank_source', bank.id),
+    api.from('transactions').delete().eq('bank_source', bank.id),
+    api.from('subscriptions').delete().eq('bank_source', bank.id),
+    api.from('installments').delete().eq('bank_source', bank.id),
   ]);
 }
 
@@ -348,7 +348,7 @@ export async function backfillMissingLazer() {
 
   // Lista todas as transações do mês corrente vindas de seed (bank_source
   // não-nulo) pra saber: quais bancos existem? algum já tem lazer este mês?
-  const { data: existing, error: existErr } = await supabase
+  const { data: existing, error: existErr } = await api
     .from('transactions')
     .select('bank_source, category, date')
     .not('bank_source', 'is', null)
@@ -375,6 +375,6 @@ export async function backfillMissingLazer() {
     { title: 'Spotify', amount: jitter(21.90), category: 'lazer', type: 'expense', date: daysAgo(9), bank_source: firstBankId },
   ];
 
-  const { error: insErr } = await supabase.from('transactions').insert(toInsert);
+  const { error: insErr } = await api.from('transactions').insert(toInsert);
   return insErr ? 0 : toInsert.length;
 }

@@ -5,7 +5,7 @@ import {
   Utensils, Car, Gamepad2, Home, Heart, MoreHorizontal, Target,
   Calendar, Tag, AlertCircle, Download, ChevronDown,
 } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 import { useDemoMode } from '../contexts/DemoContext';
 import { useHouseholdCtx } from '../contexts/HouseholdContext';
 import { DEMO_USER } from '../data/demoData';
@@ -91,7 +91,7 @@ function AddTransactionForm({ onClose, onCreated }) {
     }
 
     setSaving(true);
-    const { data, error: insertErr } = await supabase
+    const { data, error: insertErr } = await api
       .from('transactions')
       .insert({
         title:        title.trim().slice(0, 120),
@@ -461,7 +461,7 @@ export function Transactions() {
 
   const resolveUserName = async () => {
     if (isDemo) return DEMO_USER.name;
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await api.auth.getUser();
     return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário';
   };
 
@@ -493,7 +493,7 @@ export function Transactions() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await api
         .from('transactions')
         .select('id, title, amount, category, type, date, created_at, user_id')
         .order('date', { ascending: false })
@@ -527,7 +527,7 @@ export function Transactions() {
     if (!pendingDelete) return;
     if (isDemo) { showDemoBlock(); setPendingDelete(null); return; }
     setDeleting(true);
-    const { error } = await supabase
+    const { error } = await api
       .from('transactions')
       .delete()
       .eq('id', pendingDelete.id);

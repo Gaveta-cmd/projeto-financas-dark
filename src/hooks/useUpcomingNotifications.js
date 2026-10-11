@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 
 function parseLocalDate(iso) {
   const [y, m, d] = iso.split('-').map(Number);
@@ -37,14 +37,14 @@ export function useUpcomingNotifications() {
         setLoading(true);
 
         // Busca subscriptions com next_billing_date nos próximos 7 dias
-        const { data: subs, error: subError } = await supabase
+        const { data: subs, error: subError } = await api
           .from('subscriptions')
           .select('id, name, next_billing_date, amount');
 
         if (subError) throw subError;
 
         // Busca installments em aberto
-        const { data: insts, error: instError } = await supabase
+        const { data: insts, error: instError } = await api
           .from('installments')
           .select('id, name, start_date, paid_installments, total_installments')
           .lt('paid_installments', 'total_installments');

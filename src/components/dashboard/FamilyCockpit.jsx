@@ -17,7 +17,7 @@ import { useHousehold }      from '../../hooks/useHousehold';
 import { useSpendingLimits } from '../../hooks/useSpendingLimits';
 import { useDemoMode }       from '../../contexts/DemoContext';
 import { useHouseholdCtx }   from '../../contexts/HouseholdContext';
-import { supabase }          from '../../lib/supabaseClient';
+import { api }          from '../../lib/api';
 
 // ─── Mapeamento de categorias ─────────────────────────────────────────────────
 const CATEGORY_META = {
@@ -314,8 +314,8 @@ export function FamilyCockpit({ onGoToTransactions }) {
       let txList = [];
       if (household?.id) {
         txList = await fetchHouseholdTransactions(month);
-      } else if (supabase) {
-        const { data } = await supabase
+      } else if (api) {
+        const { data } = await api
           .from('transactions')
           .select('id, title, amount, category, type, date, user_id')
           .order('date', { ascending: false })
@@ -325,16 +325,16 @@ export function FamilyCockpit({ onGoToTransactions }) {
 
       // Próximos vencimentos (30 dias)
       const upcomingList = [];
-      if (supabase) {
+      if (api) {
         const today30 = addDays(new Date().toISOString().split('T')[0], 30);
 
         const [{ data: subs }, { data: insts }] = await Promise.all([
-          supabase
+          api
             .from('subscriptions')
             .select('id, name, next_billing_date, amount')
             .lte('next_billing_date', today30)
             .gte('next_billing_date', new Date().toISOString().split('T')[0]),
-          supabase
+          api
             .from('installments')
             .select('id, name, start_date, paid_installments, total_installments')
             .lt('paid_installments', 'total_installments'),

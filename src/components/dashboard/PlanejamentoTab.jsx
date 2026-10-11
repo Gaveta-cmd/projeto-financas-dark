@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Laugh, TrendingUp, ChevronDown, ChevronUp,
-  Info, Users, Wallet, AlertTriangle, CheckCircle2,
+  Info, Users, Wallet, AlertTriangle, CheckCircle2, Sparkles,
 } from 'lucide-react';
 import { useHousehold }      from '../../hooks/useHousehold';
 import { useDemoMode }       from '../../contexts/DemoContext';

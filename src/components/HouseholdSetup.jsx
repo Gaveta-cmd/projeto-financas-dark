@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Users, Copy, Check, ChevronRight, AlertCircle } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { api } from '../lib/api';
 import { Button } from './Button';
 
 const slide = {
@@ -52,7 +52,7 @@ export function HouseholdSetup({ userId, onComplete }) {
     setError('');
     try {
       // 1) Criar household
-      const { data: hh, error: e1 } = await supabase
+      const { data: hh, error: e1 } = await api
         .from('households')
         .insert({ name: groupName.trim(), created_by: userId })
         .select()
@@ -60,7 +60,7 @@ export function HouseholdSetup({ userId, onComplete }) {
       if (e1) throw e1;
 
       // 2) Inserir membro (admin)
-      const { error: e2 } = await supabase
+      const { error: e2 } = await api
         .from('household_members')
         .insert({
           household_id:   hh.id,
@@ -72,7 +72,7 @@ export function HouseholdSetup({ userId, onComplete }) {
       if (e2) throw e2;
 
       // 3) Atualizar profiles.household_id
-      await supabase.from('profiles').update({ household_id: hh.id }).eq('id', userId);
+      await api.from('profiles').update({ household_id: hh.id }).eq('id', userId);
 
       setCreated(hh);
       setDir(1);
@@ -90,7 +90,7 @@ export function HouseholdSetup({ userId, onComplete }) {
     setSaving(true);
     setError('');
     try {
-      const { error: e } = await supabase.rpc('join_household_by_code', {
+      const { error: e } = await api.rpc('join_household_by_code', {
         code:           code.trim().toUpperCase(),
         nickname_param: nickname.trim(),
         income_param:   Number(income) || 0,

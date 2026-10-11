@@ -52,7 +52,7 @@ const pageVariants = {
 };
 
 function App() {
-  const { isDemo, enterDemo, exitDemo, blockVisible, hideDemoBlock } = useDemoMode();
+  const { isDemo, exitDemo, blockVisible, hideDemoBlock } = useDemoMode();
 
   const [session,            setSession]            = useState(undefined);
   const [activeTab,          setActiveTab]          = useState('dashboard');
@@ -159,7 +159,7 @@ function App() {
     <AnimatePresence mode="wait">
       {!activeSession ? (
         <motion.div key="login" {...pageVariants}>
-          <Login onLogin={setSession} onEnterDemo={enterDemo} />
+          <Login onLogin={setSession} />
         </motion.div>
       ) : (
         <HouseholdProvider userId={activeSession?.user?.id}>
